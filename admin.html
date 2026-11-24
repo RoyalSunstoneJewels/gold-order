@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Panel — ROYAL SUNSTONE JEWELS</title>
+  <title>Admin Control Panel — ROYAL SUNSTONE JEWELS</title>
   <style>
     :root {
       --navy: #142238;
@@ -106,7 +106,7 @@
 
     .dash-grid {
       display: grid;
-      grid-template-columns: 1fr 1.3fr;
+      grid-template-columns: 1fr 1.25fr;
       gap: 22px;
     }
 
@@ -138,18 +138,18 @@
   <div class="wrap">
     <header class="topbar">
       <div>
-        <h1 style="font-size:20px;">ROYAL SUNSTONE — ADMIN CONTROL</h1>
-        <p style="font-size:12px; color:#e7cfa0;">Catalog, Orders &amp; Concierge Management</p>
+        <h1 style="font-size:20px;">ROYAL SUNSTONE — CONTROL PANEL</h1>
+        <p style="font-size:12px; color:#e7cfa0;">Support Links, Products &amp; Payout Requests</p>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
-        <a href="./index.html" class="btn btn-light" style="text-decoration:none;">View Storefront</a>
+        <a href="./index.html" class="btn btn-light">View Storefront</a>
         <button id="logoutBtn" class="btn btn-maroon" style="display:none;">Sign Out</button>
       </div>
     </header>
 
     <section id="loginSection" class="login-card">
       <h2 style="margin-bottom:8px; color:var(--navy);">Admin Sign In</h2>
-      <p class="muted" style="margin-bottom:18px;">Use your Firebase Authentication admin email &amp; password.</p>
+      <p class="muted" style="margin-bottom:18px;">Sign in with your Firebase Authentication admin email &amp; password.</p>
       <form id="adminLoginForm">
         <div class="form-group">
           <label for="adminEmail">Admin Email</label>
@@ -166,51 +166,82 @@
 
     <section id="dashboardSection" style="display:none;">
       <div class="dash-grid">
-        <div class="panel">
-          <h2 style="margin-bottom:14px; color:var(--navy);">Add Jewelry Product</h2>
-          <form id="addProductForm">
-            <div class="form-group">
-              <label for="prodName">Product Name</label>
-              <input type="text" id="prodName" class="input" required placeholder="Royal Sunstone Tiara" />
-            </div>
-            <div class="form-group">
-              <label for="prodCategory">Category</label>
-              <select id="prodCategory" class="input">
-                <option value="Rings">Rings</option>
-                <option value="Necklaces">Necklaces</option>
-                <option value="Bracelets">Bracelets</option>
-                <option value="Earrings">Earrings</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="prodPrice">Price (USD)</label>
-              <input type="number" id="prodPrice" class="input" required min="1" step="0.01" value="550" />
-            </div>
-            <div class="form-group">
-              <label for="prodReward">Snatch Reward (USD)</label>
-              <input type="number" id="prodReward" class="input" required min="0" step="0.01" value="25" />
-            </div>
-            <div class="form-group">
-              <label for="prodImage">Image Path (optional)</label>
-              <input type="text" id="prodImage" class="input" placeholder="./images/ring-1.jpg" />
-            </div>
-            <div class="form-group">
-              <label for="prodDesc">Description</label>
-              <textarea id="prodDesc" rows="2" class="input" placeholder="Handcrafted sunstone piece..."></textarea>
-            </div>
-            <button type="submit" class="btn btn-gold" style="width:100%;">Publish Product</button>
-          </form>
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <!-- Contact Us Telegram & WhatsApp Control -->
+          <div class="panel">
+            <h2 style="margin-bottom:12px; color:var(--navy);">Contact Us Channels</h2>
+            <form id="supportConfigForm">
+              <div class="form-group">
+                <label for="telegramUrlInput">Telegram Link</label>
+                <input
+                  type="url"
+                  id="telegramUrlInput"
+                  class="input"
+                  required
+                  placeholder="https://t.me/your_username"
+                />
+              </div>
+              <div class="form-group">
+                <label for="whatsappNumberInput">WhatsApp Number (with country code)</label>
+                <input
+                  type="text"
+                  id="whatsappNumberInput"
+                  class="input"
+                  required
+                  placeholder="8801712345678"
+                />
+              </div>
+              <button type="submit" class="btn btn-gold" style="width:100%;">Save Contact Settings</button>
+            </form>
+          </div>
+
+          <!-- Add Jewelry Product -->
+          <div class="panel">
+            <h2 style="margin-bottom:12px; color:var(--navy);">Add Jewelry Product</h2>
+            <form id="addProductForm">
+              <div class="form-group">
+                <label for="prodName">Product Name</label>
+                <input type="text" id="prodName" class="input" required placeholder="Royal Sunstone Necklace" />
+              </div>
+              <div class="form-group">
+                <label for="prodCategory">Category</label>
+                <select id="prodCategory" class="input">
+                  <option value="Rings">Rings</option>
+                  <option value="Necklaces">Necklaces</option>
+                  <option value="Bracelets">Bracelets</option>
+                  <option value="Earrings">Earrings</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="prodPrice">Price (USD)</label>
+                <input type="number" id="prodPrice" class="input" required min="1" step="0.01" value="520" />
+              </div>
+              <div class="form-group">
+                <label for="prodReward">Reward (BDT)</label>
+                <input type="number" id="prodReward" class="input" required min="0" step="0.01" value="20" />
+              </div>
+              <div class="form-group">
+                <label for="prodImage">Image Path (optional)</label>
+                <input type="text" id="prodImage" class="input" placeholder="./images/necklace-1.jpg" />
+              </div>
+              <div class="form-group">
+                <label for="prodDesc">Description</label>
+                <textarea id="prodDesc" rows="2" class="input" placeholder="Sunstone piece details..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-gold" style="width:100%;">Publish Item</button>
+            </form>
+          </div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:20px;">
           <div class="panel">
-            <h2 style="margin-bottom:12px; color:var(--navy);">Live Products</h2>
-            <div id="adminProductsList"></div>
+            <h2 style="margin-bottom:12px; color:var(--navy);">Pay Out Requests</h2>
+            <div id="adminPayoutsList"></div>
           </div>
 
           <div class="panel">
-            <h2 style="margin-bottom:12px; color:var(--navy);">Recent Orders</h2>
-            <div id="adminOrdersList"></div>
+            <h2 style="margin-bottom:12px; color:var(--navy);">Published Products</h2>
+            <div id="adminProductsList"></div>
           </div>
         </div>
       </div>
@@ -226,6 +257,7 @@
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import {
       ref,
+      set,
       push,
       onValue,
       remove
@@ -247,12 +279,14 @@
     document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       loginError.textContent = "";
-      const email = document.getElementById("adminEmail").value.trim();
-      const password = document.getElementById("adminPassword").value;
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(
+          auth,
+          document.getElementById("adminEmail").value.trim(),
+          document.getElementById("adminPassword").value
+        );
       } catch (err) {
-        loginError.textContent = err.message || "Invalid admin credentials.";
+        loginError.textContent = err.message || "Login failed.";
       }
     });
 
@@ -263,11 +297,23 @@
         loginSection.style.display = "none";
         dashboardSection.style.display = "block";
         logoutBtn.style.display = "inline-block";
-        startAdminListeners();
+        startListeners();
       } else {
         loginSection.style.display = "block";
         dashboardSection.style.display = "none";
         logoutBtn.style.display = "none";
+      }
+    });
+
+    document.getElementById("supportConfigForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const telegramUrl = document.getElementById("telegramUrlInput").value.trim();
+      const whatsappNumber = document.getElementById("whatsappNumberInput").value.trim().replace(/\D/g, "");
+      try {
+        await set(ref(db, "support_config"), { telegramUrl, whatsappNumber });
+        alert("Contact Us Telegram & WhatsApp settings saved!");
+      } catch (err) {
+        alert("Error: " + err.message);
       }
     });
 
@@ -284,23 +330,27 @@
       try {
         await push(ref(db, "products"), item);
         e.target.reset();
-        alert("Product published to live catalog!");
+        alert("Product published!");
       } catch (err) {
-        alert("Error saving product: " + err.message);
+        alert("Error: " + err.message);
       }
     });
 
-    function startAdminListeners() {
-      const prodListEl = document.getElementById("adminProductsList");
-      const ordListEl = document.getElementById("adminOrdersList");
+    function startListeners() {
+      onValue(ref(db, "support_config"), (snap) => {
+        if (!snap.exists()) return;
+        const c = snap.val();
+        if (c.telegramUrl) document.getElementById("telegramUrlInput").value = c.telegramUrl;
+        if (c.whatsappNumber) document.getElementById("whatsappNumberInput").value = c.whatsappNumber;
+      });
 
+      const prodList = document.getElementById("adminProductsList");
       onValue(ref(db, "products"), (snap) => {
         if (!snap.exists()) {
-          prodListEl.innerHTML = `<p class="muted">No products in database yet.</p>`;
+          prodList.innerHTML = `<p class="muted">No products yet.</p>`;
           return;
         }
-        const entries = Object.entries(snap.val());
-        prodListEl.innerHTML = entries
+        prodList.innerHTML = Object.entries(snap.val())
           .map(
             ([id, p]) => `
               <div class="item-row">
@@ -308,34 +358,34 @@
                   <strong>${escapeHtml(p.name)}</strong>
                   <div class="muted">${escapeHtml(p.category)} &bull; $${Number(p.price).toFixed(2)}</div>
                 </div>
-                <button class="btn btn-maroon" data-del-id="${escapeHtml(id)}">Delete</button>
+                <button class="btn btn-maroon" data-del="${escapeHtml(id)}">Delete</button>
               </div>
             `
           )
           .join("");
 
-        prodListEl.querySelectorAll("[data-del-id]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            remove(ref(db, `products/${btn.dataset.delId}`));
-          });
+        prodList.querySelectorAll("[data-del]").forEach((btn) => {
+          btn.addEventListener("click", () => remove(ref(db, `products/${btn.dataset.del}`)));
         });
       });
 
-      onValue(ref(db, "orders"), (snap) => {
+      const payList = document.getElementById("adminPayoutsList");
+      onValue(ref(db, "payouts"), (snap) => {
         if (!snap.exists()) {
-          ordListEl.innerHTML = `<p class="muted">No orders recorded yet.</p>`;
+          payList.innerHTML = `<p class="muted">No pay out requests yet.</p>`;
           return;
         }
-        const orders = Object.values(snap.val()).reverse().slice(0, 10);
-        ordListEl.innerHTML = orders
+        payList.innerHTML = Object.values(snap.val())
+          .reverse()
+          .slice(0, 12)
           .map(
-            (o) => `
+            (r) => `
               <div class="item-row">
                 <div>
-                  <strong>${escapeHtml(o.itemName)}</strong>
-                  <div class="muted">${escapeHtml(o.userEmail || "Guest")} &bull; $${Number(o.price).toFixed(2)}</div>
+                  <strong>৳${Number(r.amount || 0).toFixed(2)}</strong>
+                  <div class="muted">${escapeHtml(r.fullPhone || "")} &bull; ${escapeHtml(r.method || "")}: ${escapeHtml(r.address || "")}</div>
                 </div>
-                <span class="muted">${escapeHtml(o.status || "Confirmed")}</span>
+                <span class="muted">Pending</span>
               </div>
             `
           )

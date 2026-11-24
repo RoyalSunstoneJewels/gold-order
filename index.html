@@ -7,17 +7,17 @@
   <style>
     :root {
       --maroon: #5a0710;
-      --maroon-dark: #3d0309;
       --gold: #c69c53;
       --gold-light: #e7cfa0;
       --navy: #142238;
+      --purple: #4a0e78;
       --bg: #faf7f2;
       --card: #ffffff;
       --text: #1c1917;
       --muted: #6b625b;
       --border: #e6dfd5;
       --success: #15803d;
-      --danger: #b91c1c;
+      --danger: #dc2626;
     }
 
     * {
@@ -43,7 +43,6 @@
       font-family: inherit;
     }
 
-    /* Top Promo Bar */
     .promo-bar {
       background: var(--maroon);
       color: #fff;
@@ -55,7 +54,6 @@
       text-transform: uppercase;
     }
 
-    /* Main Header */
     .site-header {
       position: sticky;
       top: 0;
@@ -93,10 +91,6 @@
       cursor: pointer;
       display: grid;
       place-items: center;
-    }
-
-    .menu-btn:hover {
-      background: var(--bg);
     }
 
     .brand-logo {
@@ -153,7 +147,7 @@
 
     .btn {
       border: none;
-      border-radius: 999px;
+      border-radius: 10px;
       padding: 9px 16px;
       font-size: 13px;
       font-weight: 700;
@@ -161,12 +155,22 @@
       transition: transform 0.15s ease, opacity 0.15s ease;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
     }
 
-    .btn:hover {
+    .btn:hover:not(:disabled) {
       transform: translateY(-1px);
-      opacity: 0.95;
+      opacity: 0.96;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-pill {
+      border-radius: 999px;
     }
 
     .btn-gold {
@@ -179,22 +183,27 @@
       color: #fff;
     }
 
+    .btn-purple {
+      background: var(--purple);
+      color: #fff;
+    }
+
     .btn-outline {
       background: #fff;
       color: var(--navy);
       border: 1px solid var(--border);
     }
 
-    .btn-maroon {
-      background: var(--maroon);
+    .btn-black {
+      background: #0b0d12;
       color: #fff;
     }
 
-    /* Side Drawer */
+    /* Drawer matching Image 1 */
     .drawer-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.45);
+      background: rgba(0, 0, 0, 0.52);
       z-index: 80;
       display: none;
     }
@@ -206,36 +215,178 @@
     .side-drawer {
       position: fixed;
       top: 0;
-      left: -300px;
-      width: 290px;
+      left: -380px;
+      width: 360px;
+      max-width: 92vw;
       height: 100%;
       background: #fff;
       z-index: 90;
-      padding: 24px 20px;
       transition: left 0.25s ease;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+      box-shadow: 4px 0 28px rgba(0, 0, 0, 0.2);
+      overflow-y: auto;
     }
 
     .side-drawer.open {
       left: 0;
     }
 
-    .drawer-item {
+    .drawer-top-close {
+      display: flex;
+      justify-content: flex-end;
+      padding: 12px 16px 0;
+    }
+
+    .profile-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 20px 18px;
+      text-align: center;
+    }
+
+    .avatar-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #d1d5db;
+      display: grid;
+      place-items: center;
+      color: #6b7280;
+      font-size: 34px;
+      margin-bottom: 10px;
+    }
+
+    .profile-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .profile-uid {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .buy-in-wrap {
+      padding: 0 18px 18px;
+    }
+
+    .buy-in-btn {
       width: 100%;
-      text-align: left;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      padding: 12px 14px;
-      border-radius: 10px;
-      font-weight: 600;
-      color: var(--navy);
+      background: #071326;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 700;
       cursor: pointer;
     }
 
-    /* Hero Section */
+    .quick-tiles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .quick-tile {
+      background: #fff;
+      border: none;
+      border-right: 1px solid #e5e7eb;
+      padding: 14px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      color: #1f2937;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .quick-tile:last-child {
+      border-right: none;
+    }
+
+    .quick-tile:hover {
+      background: #f9fafb;
+    }
+
+    .quick-icon {
+      font-size: 19px;
+      line-height: 1;
+    }
+
+    .menu-accordion-list {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .menu-row-btn {
+      width: 100%;
+      background: #fff;
+      border: none;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1f2937;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .menu-row-btn:hover {
+      background: #f9fafb;
+    }
+
+    .menu-row-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .menu-accordion-panel {
+      display: none;
+      padding: 12px 20px 16px;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 13px;
+      color: #374151;
+    }
+
+    .menu-accordion-panel.open {
+      display: block;
+    }
+
+    .drawer-footer-signout {
+      padding: 14px 18px 20px;
+      background: #fff;
+      position: sticky;
+      bottom: 0;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .signout-outline-btn {
+      width: 100%;
+      background: #fff;
+      color: var(--danger);
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Hero */
     .hero {
       max-width: 1280px;
       margin: 24px auto 0;
@@ -246,9 +397,9 @@
       background: linear-gradient(125deg, #142238 0%, #271019 55%, #5a0710 100%);
       color: #fff;
       border-radius: 22px;
-      padding: 44px 32px;
+      padding: 40px 32px;
       display: grid;
-      grid-template-columns: 1.4fr 1fr;
+      grid-template-columns: 1.35fr 1fr;
       gap: 28px;
       align-items: center;
       box-shadow: 0 18px 40px rgba(20, 34, 56, 0.16);
@@ -269,7 +420,7 @@
     }
 
     .hero h1 {
-      font-size: clamp(28px, 4vw, 44px);
+      font-size: clamp(28px, 4vw, 42px);
       line-height: 1.15;
       margin-bottom: 12px;
     }
@@ -292,7 +443,6 @@
       border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 16px;
       padding: 18px;
-      backdrop-filter: blur(6px);
     }
 
     .stat-label {
@@ -303,13 +453,12 @@
     }
 
     .stat-value {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 800;
       margin-top: 6px;
       color: #fff;
     }
 
-    /* Main Container */
     .container {
       max-width: 1280px;
       margin: 34px auto;
@@ -336,7 +485,6 @@
       color: var(--muted);
     }
 
-    /* Category Pills */
     .filter-row {
       display: flex;
       gap: 10px;
@@ -361,10 +509,9 @@
       border-color: var(--navy);
     }
 
-    /* Products Grid */
     .grid-3 {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 20px;
     }
 
@@ -380,7 +527,7 @@
 
     .card-img {
       width: 100%;
-      height: 210px;
+      height: 205px;
       object-fit: cover;
       background: #f1ece4;
     }
@@ -406,7 +553,7 @@
     }
 
     .card-title {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       color: var(--navy);
     }
@@ -425,7 +572,7 @@
     }
 
     .price {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 800;
       color: var(--maroon);
     }
@@ -436,96 +583,186 @@
       color: var(--success);
     }
 
-    /* Two Column Panels */
-    .two-col {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 22px;
-      margin-top: 40px;
-    }
-
-    .panel {
+    /* Sub-page / Feature Views (Pay Out, Contact Us, Snatch Orders) */
+    .feature-view-card {
+      display: none;
+      margin-top: 32px;
       background: #fff;
       border: 1px solid var(--border);
       border-radius: 18px;
-      padding: 22px;
-      box-shadow: 0 8px 24px rgba(20, 34, 56, 0.05);
+      padding: 26px;
+      box-shadow: 0 12px 32px rgba(20, 34, 56, 0.07);
     }
 
-    .order-item {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
+    .feature-view-card.active {
+      display: block;
+    }
+
+    /* Pay Out styling matching Image 2 */
+    .payout-wallet-card {
+      background: #1d2d44;
+      color: #fff;
+      border-radius: 14px;
+      padding: 22px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      background: var(--bg);
+      margin: 14px 0 20px;
     }
 
-    .status-pill {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: #e8f5e9;
-      color: var(--success);
+    .payout-wallet-amount {
+      font-size: 30px;
+      font-weight: 800;
+      margin-top: 6px;
     }
 
-    /* Chat Box */
-    .chat-log {
-      height: 240px;
-      overflow-y: auto;
-      border: 1px solid var(--border);
+    .collection-box {
+      border: 1px solid #86efac;
+      background: #f0fdf4;
       border-radius: 12px;
-      padding: 12px;
-      background: var(--bg);
-      margin-bottom: 12px;
+      padding: 16px 18px;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 10px 0 20px;
     }
 
-    .msg {
-      padding: 9px 12px;
+    .rules-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
       border-radius: 12px;
-      max-width: 85%;
+      padding: 16px;
       font-size: 13px;
+      color: #475569;
+      margin: 14px 0 20px;
     }
 
-    .msg.user {
-      align-self: flex-end;
+    /* Contact Us styling matching Image 3 */
+    .help-hero-banner {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 230px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(rgba(30, 27, 24, 0.55), rgba(30, 27, 24, 0.65)),
+        url("./images/ring-1.jpg") center/cover no-repeat, #4b4640;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .help-overlay-card {
+      background: rgba(120, 118, 115, 0.72);
+      backdrop-filter: blur(4px);
+      border-radius: 12px;
+      padding: 20px 24px;
+      max-width: 520px;
+    }
+
+    .social-channel-btn {
+      width: 100%;
+      background: #fff;
+      border: 1px solid #111827;
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .social-channel-btn:hover {
+      background: #f9fafb;
+    }
+
+    /* Snatch 25 Queue */
+    .tab-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 8px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 13px 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #4b5563;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab-btn.active {
+      color: #111827;
+      border-bottom-color: #111827;
+    }
+
+    .queue-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 15px 8px;
+      border-bottom: 1px solid #eceef2;
+    }
+
+    .queue-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .queue-num {
+      font-size: 18px;
+      font-weight: 800;
+      color: #111827;
+      width: 26px;
+      text-align: center;
+    }
+
+    .queue-thumb {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+    }
+
+    .action-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .start-batch-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 16px 20px;
+      border-radius: 10px;
+      border: none;
       background: var(--navy);
       color: #fff;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
     }
 
-    .msg.admin {
-      align-self: flex-start;
-      background: #fff;
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
-
-    .chat-form {
-      display: flex;
-      gap: 8px;
-    }
-
-    .input {
-      width: 100%;
-      padding: 10px 13px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      font-size: 14px;
-      background: #fff;
-    }
-
-    /* Modal */
+    /* Modal & Account Details Modal (Image 4 style) */
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.58);
       z-index: 100;
       display: none;
       align-items: center;
@@ -539,38 +776,89 @@
 
     .modal-box {
       background: #fff;
-      border-radius: 18px;
-      max-width: 440px;
+      border-radius: 14px;
+      max-width: 470px;
       width: 100%;
-      padding: 24px;
-      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.3);
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
-    .modal-head {
+    .modal-banner-header {
+      background: #cbd5e1;
+      padding: 18px 22px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
     }
 
-    .close-btn {
-      background: none;
+    .modal-body-pad {
+      padding: 22px;
+    }
+
+    .account-metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 24px;
+      margin-bottom: 22px;
+    }
+
+    .metric-title {
+      font-size: 13px;
+      color: #4b5563;
+      margin-bottom: 4px;
+    }
+
+    .metric-val {
+      font-size: 17px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .phone-row {
+      display: grid;
+      grid-template-columns: 125px 1fr;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .phone-code {
+      background: var(--navy);
+      color: #fff;
       border: none;
-      font-size: 22px;
-      cursor: pointer;
-      color: var(--muted);
+      padding: 11px 10px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .phone-input {
+      border: none;
+      padding: 11px 12px;
+      font-size: 14px;
+      width: 100%;
+      outline: none;
+    }
+
+    .input {
+      width: 100%;
+      padding: 11px 13px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 14px;
     }
 
     .form-group {
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .form-group label {
       display: block;
       font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 5px;
-      color: var(--navy);
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #111827;
     }
 
     .toast {
@@ -605,7 +893,7 @@
     }
 
     @media (max-width: 860px) {
-      .hero-box, .two-col {
+      .hero-box {
         grid-template-columns: 1fr;
       }
       .nav-links {
@@ -631,36 +919,128 @@
 
       <nav class="nav-links">
         <button data-scroll="catalogSection">Collection</button>
-        <button data-scroll="ordersSection">Snatch Orders</button>
-        <button data-scroll="supportSection">Concierge</button>
+        <button id="navSnatchBtn">Snatch Orders</button>
+        <button id="navContactBtn">Contact Us</button>
         <a href="./admin.html">Admin Panel</a>
       </nav>
 
       <div class="header-actions">
-        <button class="btn btn-gold" id="headerSnatchBtn">
-          Snatch Order (<span id="snatchCount">100</span>)
+        <button class="btn btn-gold btn-pill" id="headerSnatchBtn" style="display:none;">
+          Snatch Orders (<span id="snatchProgressBadge">0 / 25</span>)
         </button>
-        <button class="btn btn-navy" id="accountDetailsBtn">
-          Account Details
-        </button>
-        <button class="btn btn-outline" id="authActionBtn">
+        <button class="btn btn-navy btn-pill" id="authActionBtn">
           Login / Register
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Drawer -->
+  <!-- Left 3-Line Drawer (Image 1 structure) -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside class="side-drawer" id="sideDrawer">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <strong style="color:var(--navy); font-size:16px;">Navigation</strong>
-      <button class="close-btn" id="closeDrawerBtn">&times;</button>
+    <div class="drawer-top-close">
+      <button class="close-btn" id="closeDrawerBtn" aria-label="Close drawer">&times;</button>
     </div>
-    <button class="drawer-item" data-scroll="catalogSection">Jewelry Collection</button>
-    <button class="drawer-item" data-scroll="ordersSection">My Snatch Orders</button>
-    <button class="drawer-item" data-scroll="supportSection">Live Concierge Chat</button>
-    <a class="drawer-item" href="./admin.html">Open Admin Dashboard</a>
+
+    <div class="profile-header">
+      <div class="avatar-circle">&#128100;</div>
+      <div class="profile-name" id="drawerUserName">shuvoum</div>
+      <div class="profile-uid" id="drawerUserUid">UID:2410380</div>
+    </div>
+
+    <div class="buy-in-wrap">
+      <button type="button" class="buy-in-btn" id="drawerBuyInBtn">Buy In</button>
+    </div>
+
+    <div class="quick-tiles">
+      <button type="button" class="quick-tile" id="drawerPayOutTile">
+        <span class="quick-icon">&#2547;</span>
+        <span>Pay Out</span>
+      </button>
+      <button type="button" class="quick-tile" id="drawerContactTile">
+        <span class="quick-icon">&#9993;</span>
+        <span>Contact us</span>
+      </button>
+      <button type="button" class="quick-tile" id="drawerAccountTile">
+        <span class="quick-icon">&#128179;</span>
+        <span>Account details</span>
+      </button>
+    </div>
+
+    <div class="menu-accordion-list">
+      <button type="button" class="menu-row-btn" data-acc="bind">
+        <span class="menu-row-left"><span>&#128179;</span><span>Bind Account</span></span>
+        <span>+</span>
+      </button>
+      <div class="menu-accordion-panel" id="acc-bind">
+        <form id="bindAccountForm">
+          <div class="form-group">
+            <label for="bindMethod">Method</label>
+            <select id="bindMethod" class="input">
+              <option value="bkash">bkash</option>
+              <option value="nagad">nagad</option>
+              <option value="bank">Bank Transfer</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="bindNumber">Account / Wallet Number</label>
+            <input type="text" id="bindNumber" class="input" required placeholder="45643 or 01XXXXXXXXX" />
+          </div>
+          <button type="submit" class="btn btn-navy" style="width:100%;">Save Collection Address</button>
+        </form>
+      </div>
+
+      <button type="button" class="menu-row-btn" data-acc="checkin">
+        <span class="menu-row-left"><span>&#8680;</span><span>Check In</span></span>
+        <span>+</span>
+      </button>
+      <div class="menu-accordion-panel" id="acc-checkin">
+        <p style="margin-bottom:10px;">Claim daily member check-in bonus into your wallet.</p>
+        <button type="button" class="btn btn-gold" id="dailyCheckInBtn" style="width:100%;">Claim Daily Check-In (+$10.00)</button>
+      </div>
+
+      <button type="button" class="menu-row-btn" data-acc="history">
+        <span class="menu-row-left"><span>&#128340;</span><span>History</span></span>
+        <span>+</span>
+      </button>
+      <div class="menu-accordion-panel" id="acc-history" style="max-height:200px; overflow-y:auto;">
+        <div id="drawerHistoryContent">No activity recorded yet.</div>
+      </div>
+
+      <button type="button" class="menu-row-btn" data-acc="password">
+        <span class="menu-row-left"><span>&#9881;</span><span>Change Password</span></span>
+        <span>+</span>
+      </button>
+      <div class="menu-accordion-panel" id="acc-password">
+        <form id="changePasswordForm">
+          <div class="form-group">
+            <label for="newPassInput">New Password</label>
+            <input type="password" id="newPassInput" class="input" required minlength="6" placeholder="At least 6 chars" />
+          </div>
+          <button type="submit" class="btn btn-navy" style="width:100%;">Update Password</button>
+        </form>
+      </div>
+
+      <button type="button" class="menu-row-btn" data-acc="help">
+        <span class="menu-row-left"><span>?</span><span>Help</span></span>
+        <span>+</span>
+      </button>
+      <div class="menu-accordion-panel" id="acc-help">
+        Log in with your mobile number to unlock Snatch Orders, bind your payout account, or reach support via Contact Us.
+      </div>
+
+      <button type="button" class="menu-row-btn" data-acc="about">
+        <span class="menu-row-left"><span>&#9432;</span><span>About Us</span></span>
+        <span>+</span>
+      </button>
+      <div class="menu-accordion-panel" id="acc-about">
+        ROYAL SUNSTONE — JEWELS is dedicated to fine sunstone pieces and member order allocations.
+      </div>
+    </div>
+
+    <div class="drawer-footer-signout">
+      <button type="button" class="signout-outline-btn" id="drawerSignOutBtn">Sign Out</button>
+    </div>
   </aside>
 
   <!-- Hero -->
@@ -670,45 +1050,45 @@
         <span class="hero-tag">Royal Sunstone Fine Jewelry</span>
         <h1>Timeless Sunstone &amp; Gold Craftsmanship</h1>
         <p>
-          Explore curated jewelry pieces, claim snatch order allocations, and track your
-          orders in real time.
+          Explore our showcase collection. Log in with your mobile number to unlock Snatch Orders,
+          Pay Out, Account Details, and Concierge contacts.
         </p>
         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-          <button class="btn btn-gold" id="heroSnatchBtn">Snatch Order Now</button>
-          <button class="btn btn-outline" data-scroll="catalogSection">Browse Collection</button>
+          <button class="btn btn-gold" id="heroPrimaryBtn">Login with Phone</button>
+          <button class="btn btn-outline" data-scroll="catalogSection">Browse Showcase</button>
         </div>
       </div>
 
       <div class="hero-stats">
         <div class="stat-card">
-          <div class="stat-label">Account Balance</div>
-          <div class="stat-value" id="userBalanceText">$0.00</div>
+          <div class="stat-label">Wallet Funds</div>
+          <div class="stat-value" id="heroBalanceText">&#2547; 698.34</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Remaining Quota</div>
-          <div class="stat-value" id="quotaText">100</div>
+          <div class="stat-label">Current Order</div>
+          <div class="stat-value" id="heroOrderStepText">0 / 25</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Active Orders</div>
-          <div class="stat-value" id="activeOrdersText">0</div>
+          <div class="stat-label">Daily Profit</div>
+          <div class="stat-value" id="heroProfitText">0.00</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Member Status</div>
-          <div class="stat-value" id="memberStatusText">Guest</div>
+          <div class="stat-label">Member Account</div>
+          <div class="stat-value" id="heroMemberText">Guest</div>
         </div>
       </div>
     </div>
   </section>
 
   <main class="container">
-    <!-- Catalog -->
+    <!-- Main Page Showcase (No direct order confirmation here) -->
     <section id="catalogSection">
       <div class="section-head">
         <div>
-          <h2 class="section-title">Signature Collection</h2>
-          <p class="section-sub">Select a piece to snatch order or view details</p>
+          <h2 class="section-title">Signature Collection Showcase</h2>
+          <p class="section-sub">View-only catalog — orders are placed inside Snatch Orders after mobile login</p>
         </div>
-        <span class="section-sub" id="syncStatusText">Syncing live catalog...</span>
+        <span class="section-sub" id="syncStatusText">Showcase ready</span>
       </div>
 
       <div class="filter-row" id="categoryFilters">
@@ -722,64 +1102,85 @@
       <div class="grid-3" id="productsGrid"></div>
     </section>
 
-    <!-- Orders & Concierge -->
-    <div class="two-col">
-      <section class="panel" id="ordersSection">
-        <div class="section-head" style="margin-bottom:14px;">
-          <div>
-            <h2 class="section-title" style="font-size:20px;">Recent Snatch Orders</h2>
-            <p class="section-sub">Live order history &amp; commission rewards</p>
-          </div>
-          <button class="btn btn-gold" id="panelSnatchBtn">+ Snatch</button>
-        </div>
-        <div id="ordersList"></div>
-      </section>
-
-      <section class="panel" id="supportSection">
-        <div class="section-head" style="margin-bottom:14px;">
-          <div>
-            <h2 class="section-title" style="font-size:20px;">Royal Concierge</h2>
-            <p class="section-sub">Message our support &amp; order desk</p>
-          </div>
-        </div>
-        <div class="chat-log" id="chatLog"></div>
-        <form class="chat-form" id="chatForm">
-          <input
-            type="text"
-            class="input"
-            id="chatInput"
-            placeholder="Write a message..."
-            autocomplete="off"
-          />
-          <button type="submit" class="btn btn-navy">Send</button>
-        </form>
-      </section>
-    </div>
-  </main>
-
-  <!-- Auth / Account Modal -->
-  <div class="modal-backdrop" id="authModal">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3 id="modalTitle">Member Access</h3>
-        <button class="close-btn" id="closeModalBtn">&times;</button>
+    <!-- 1. Pay Out View (Image 2) -->
+    <section class="feature-view-card" id="payOutView">
+      <div class="breadcrumb-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span class="section-sub">Home &gt; Pay Out</span>
+        <button type="button" class="btn btn-outline" data-close-view="payOutView">&times; Close</button>
       </div>
-      <div id="modalContent"></div>
-    </div>
-  </div>
+      <h2 class="snatch-heading" style="font-size:28px; font-weight:800; color:#111827;">Pay Out</h2>
 
-  <div class="toast" id="toastBox"></div>
+      <div class="payout-wallet-card">
+        <div>
+          <div style="font-size:14px; color:#cbd5e1;">Wallet Funds</div>
+          <div class="payout-wallet-amount" id="payoutWalletAmount">&#2547; 698.34</div>
+        </div>
+        <div style="font-size:28px;">&#128091;</div>
+      </div>
 
-  <footer>
-    ROYAL SUNSTONE — JEWELS &bull; Crafted for Royalty &bull;
-    <a href="./admin.html" style="color:var(--gold-light); text-decoration:underline;">Admin Login</a>
-  </footer>
+      <div style="font-size:14px; font-weight:700; color:#111827;">Collection Address</div>
+      <div class="collection-box">
+        <div>
+          <div style="font-weight:700; color:#111827; font-size:15px;">
+            <span style="color:#e11d48; margin-right:6px;">&#10148;</span>
+            <span id="boundMethodLabel">bkash</span>
+          </div>
+          <div style="color:#4b5563; font-size:14px; margin-top:2px;" id="boundAddressLabel">45643</div>
+        </div>
+        <span style="color:#16a34a; font-size:20px; font-weight:800;">&#10003;</span>
+      </div>
 
-  <script type="module">
-    import { renderAllViews, initChatListener, initFirebaseSync } from "./action.js";
-    renderAllViews();
-    initChatListener();
-    initFirebaseSync();
-  </script>
-</body>
-</html>
+      <form id="payOutForm">
+        <div class="form-group">
+          <label for="payOutAmountInput">Pay Out Amount</label>
+          <input
+            type="number"
+            id="payOutAmountInput"
+            class="input"
+            step="0.01"
+            min="1"
+            required
+            placeholder="&#2547; Enter amount"
+          />
+        </div>
+
+        <div class="rules-box">
+          <div style="font-weight:700; margin-bottom:6px;">Rules : Minimum Pay Out &#2547;500</div>
+          <div style="font-weight:700; margin-bottom:4px;">Tips:</div>
+          <p>
+            Please bind in the correct bank account information. If the Pay Out is successful but the
+            bank account details are wrong, platform will not be responsible. Therefore, please
+            double-check your bank account information.
+          </p>
+        </div>
+
+        <button type="submit" class="btn btn-black" style="width:100%; padding:15px; font-size:16px;">
+          Pay Out
+        </button>
+      </form>
+    </section>
+
+    <!-- 2. Contact Us View (Image 3: Telegram & WhatsApp controlled from Admin Panel) -->
+    <section class="feature-view-card" id="contactUsView">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span class="section-sub">Home &gt; Contact Us</span>
+        <button type="button" class="btn btn-outline" data-close-view="contactUsView">&times; Close</button>
+      </div>
+
+      <div class="help-hero-banner">
+        <div class="help-overlay-card">
+          <h2 style="font-size:26px; font-weight:800; margin-bottom:8px;">
+            Royal Sunstone Help Center
+          </h2>
+          <p style="font-size:14px; line-height:1.5;">
+            Our jewellery pieces are more than an accessory—they are an expression of identity,
+            emotion, and timeless elegance. Reach our official support channels set in Control Panel.
+          </p>
+        </div>
+      </div>
+
+      <h3 style="font-size:18px; font-weight:800; color:#111827; margin-bottom:14px;">
+        Knowledge Base
+      </h3>
+
+      <button type="button" class="social-channel-btn" id
