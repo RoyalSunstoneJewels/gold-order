@@ -6,17 +6,14 @@
   <title>ROYAL SUNSTONE — JEWELS | Crafted for Royalty</title>
   <style>
     :root {
-      --maroon: #5a0710;
-      --gold: #c69c53;
-      --gold-light: #e7cfa0;
-      --navy: #142238;
+      --ink: #141414;
+      --muted: #666666;
+      --line: #e6e3dd;
+      --bg: #ffffff;
+      --soft: #f7f5f0;
+      --navy: #0b1628;
       --purple: #4a0e78;
-      --bg: #faf7f2;
-      --card: #ffffff;
-      --text: #1c1917;
-      --muted: #6b625b;
-      --border: #e6dfd5;
-      --success: #15803d;
+      --gold: #c69c53;
       --danger: #dc2626;
     }
 
@@ -27,11 +24,15 @@
     }
 
     body {
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: "Georgia", "Times New Roman", serif;
       background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
+      color: var(--ink);
+      line-height: 1.55;
       overflow-x: hidden;
+    }
+
+    button, input, select, textarea {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     a {
@@ -39,171 +40,486 @@
       text-decoration: none;
     }
 
-    button, input, select, textarea {
-      font-family: inherit;
+    /* Top Utility & Header */
+    .top-utility {
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 12px;
     }
 
-    .promo-bar {
-      background: var(--maroon);
-      color: #fff;
-      text-align: center;
+    .util-left, .util-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .util-btn {
+      background: none;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 12px;
       font-size: 12px;
       font-weight: 600;
-      letter-spacing: 1px;
-      padding: 8px 14px;
-      text-transform: uppercase;
+      color: var(--ink);
+      cursor: pointer;
     }
 
-    .site-header {
+    .util-btn.primary {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+    }
+
+    .main-header {
       position: sticky;
       top: 0;
       z-index: 50;
       background: #fff;
-      border-bottom: 1px solid var(--border);
-      box-shadow: 0 2px 12px rgba(20, 34, 56, 0.05);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 24px 10px;
     }
 
-    .header-inner {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 12px 20px;
+    .header-top-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
-      flex-wrap: wrap;
+      gap: 16px;
     }
 
-    .brand-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .menu-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--navy);
-      font-size: 18px;
+    .menu-3line-btn {
+      background: none;
+      border: none;
+      font-size: 22px;
       cursor: pointer;
-      display: grid;
-      place-items: center;
+      color: var(--ink);
+      padding: 4px 8px;
     }
 
-    .brand-logo {
-      display: flex;
-      flex-direction: column;
+    .brand-wordmark {
+      text-align: center;
       cursor: pointer;
     }
 
-    .brand-title {
-      font-size: 19px;
-      font-weight: 800;
-      letter-spacing: 1.5px;
-      color: var(--navy);
-      line-height: 1.1;
+    .brand-main {
+      font-size: 24px;
+      letter-spacing: 5px;
+      font-weight: 500;
+      color: var(--ink);
     }
 
     .brand-sub {
-      font-size: 11px;
-      color: var(--gold);
-      font-style: italic;
-      letter-spacing: 0.6px;
-      margin-top: 2px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      color: var(--muted);
+      text-transform: uppercase;
     }
 
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--navy);
-    }
-
-    .nav-links button {
-      background: none;
-      border: none;
-      color: inherit;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      padding: 6px 4px;
-    }
-
-    .nav-links button:hover {
-      color: var(--maroon);
-    }
-
-    .header-actions {
+    .header-right-group {
       display: flex;
       align-items: center;
       gap: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 12px;
+    }
+
+    .top-cat-nav {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #f2efe9;
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: #333;
+    }
+
+    .top-cat-nav button {
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      letter-spacing: inherit;
+      text-transform: inherit;
+      cursor: pointer;
+    }
+
+    .top-cat-nav button:hover {
+      color: var(--gold);
+    }
+
+    /* Hero Banner matching Image 1 */
+    .bf-hero {
+      position: relative;
+      background: radial-gradient(circle at 65% 40%, #2c2419 0%, #090909 70%);
+      color: #fff;
+      padding: 64px 24px 54px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .bf-hero-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .bf-title-top {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: clamp(42px, 8vw, 96px);
+      font-weight: 900;
+      letter-spacing: 4px;
+      line-height: 0.96;
+      background: linear-gradient(135deg, #f5e6c4 0%, #d4af6a 45%, #fff6df 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+    }
+
+    .bf-sub-row {
+      margin-top: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
       flex-wrap: wrap;
     }
 
-    .btn {
+    .bf-upto {
+      font-size: clamp(20px, 3vw, 34px);
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #f3e4c3;
+    }
+
+    .bf-off-big {
+      font-size: clamp(46px, 8vw, 96px);
+      font-weight: 900;
+      line-height: 0.95;
+      background: linear-gradient(135deg, #e7c98b 0%, #ffffff 55%, #c69c53 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .bf-jewel-tag {
+      font-size: clamp(22px, 3.5vw, 38px);
+      font-weight: 800;
+      letter-spacing: 5px;
+      color: #e6cfa0;
+      margin-top: 6px;
+    }
+
+    .shop-now-white-btn {
+      margin-top: 26px;
+      background: #fff;
+      color: #111;
       border: none;
-      border-radius: 10px;
-      padding: 9px 16px;
-      font-size: 13px;
-      font-weight: 700;
+      padding: 12px 34px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
       cursor: pointer;
-      transition: transform 0.15s ease, opacity 0.15s ease;
-      display: inline-flex;
+    }
+
+    .hero-down-chevron {
+      display: block;
+      margin: 22px auto 0;
+      background: none;
+      border: none;
+      color: #d1d5db;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    /* Sections */
+    .section-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 56px 24px;
+    }
+
+    .section-heading-center {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .section-heading-center h2 {
+      font-size: 24px;
+      letter-spacing: 3px;
+      font-weight: 500;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .section-heading-center p {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* 3-Card Showcase Grid (Image 1 bottom) */
+    .three-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .showcase-tile {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .showcase-tile-img {
+      width: 100%;
+      height: 290px;
+      object-fit: cover;
+      background: #eae5dc;
+    }
+
+    .showcase-tile-body {
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .showcase-tile-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .showcase-tile-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* 2-Column Collection & Creative Studio (Image 2 top) */
+    .two-feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .feature-box-card {
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .feature-box-img {
+      width: 100%;
+      height: 310px;
+      object-fit: cover;
+      background: #e9e4da;
+    }
+
+    .feature-box-content {
+      padding: 22px;
+    }
+
+    .feature-box-content h3 {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .feature-box-content p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .outline-btn-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ghost-rect-btn {
+      background: #fff;
+      border: 1px solid #b5b0a6;
+      padding: 10px 18px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    /* Exclusive Collections Carousel (Image 2 & 3) */
+    .exclusive-band {
+      background: #f6f7f9;
+      padding: 52px 24px;
+    }
+
+    .carousel-controls {
+      display: flex;
       align-items: center;
       justify-content: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .carousel-arrow {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #555;
+      padding: 4px 8px;
+    }
+
+    .carousel-dots {
+      display: flex;
       gap: 6px;
+      align-items: center;
     }
 
-    .btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      opacity: 0.96;
+    .carousel-dot {
+      width: 10px;
+      height: 4px;
+      border-radius: 2px;
+      background: #bbb;
+      border: none;
+      cursor: pointer;
     }
 
-    .btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
+    .carousel-dot.active {
+      width: 18px;
+      background: #111;
     }
 
-    .btn-pill {
-      border-radius: 999px;
+    .exclusive-banner-box {
+      position: relative;
+      max-width: 1040px;
+      margin: 0 auto;
+      height: 430px;
+      overflow: hidden;
+      background: #2b241c;
     }
 
-    .btn-gold {
-      background: linear-gradient(135deg, #d4ab62, #b4863b);
+    .exclusive-banner-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.88;
+    }
+
+    .exclusive-overlay-text {
+      position: absolute;
+      left: 48px;
+      top: 50%;
+      transform: translateY(-50%);
       color: #fff;
+      max-width: 440px;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
     }
 
-    .btn-navy {
-      background: var(--navy);
+    .exclusive-overlay-text h3 {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 26px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .shop-collection-ghost {
+      margin-top: 14px;
+      background: rgba(255, 255, 255, 0.14);
       color: #fff;
+      border: 1px solid #fff;
+      padding: 10px 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
     }
 
-    .btn-purple {
-      background: var(--purple);
-      color: #fff;
+    /* World of Royal Sunstone Editorial Blocks (Image 3 bottom & Image 4) */
+    .editorial-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      margin-bottom: 48px;
     }
 
-    .btn-outline {
+    .editorial-text h3 {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .editorial-text p {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .editorial-link-btn {
+      background: none;
+      border: none;
+      border-bottom: 1px solid #444;
+      padding-bottom: 3px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .editorial-img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      background: #ece7de;
+    }
+
+    /* Dynamic Feature Panel (Snatch Orders / Pay Out / Contact Us) */
+    .dynamic-panel {
+      display: none;
+      max-width: 1040px;
+      margin: 24px auto;
       background: #fff;
-      color: var(--navy);
-      border: 1px solid var(--border);
+      border: 1px solid var(--line);
+      padding: 26px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    .btn-black {
-      background: #0b0d12;
-      color: #fff;
+    .dynamic-panel.active {
+      display: block;
     }
 
-    /* Drawer matching Image 1 */
+    /* Left 3-Line Drawer */
     .drawer-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.52);
+      background: rgba(0, 0, 0, 0.5);
       z-index: 80;
       display: none;
     }
@@ -224,66 +540,24 @@
       transition: left 0.25s ease;
       display: flex;
       flex-direction: column;
-      box-shadow: 4px 0 28px rgba(0, 0, 0, 0.2);
       overflow-y: auto;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     .side-drawer.open {
       left: 0;
     }
 
-    .drawer-top-close {
-      display: flex;
-      justify-content: flex-end;
-      padding: 12px 16px 0;
-    }
-
-    .profile-header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 8px 20px 18px;
-      text-align: center;
-    }
-
     .avatar-circle {
-      width: 72px;
-      height: 72px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       background: #d1d5db;
       display: grid;
       place-items: center;
+      font-size: 32px;
       color: #6b7280;
-      font-size: 34px;
-      margin-bottom: 10px;
-    }
-
-    .profile-name {
-      font-size: 16px;
-      font-weight: 700;
-      color: #111827;
-    }
-
-    .profile-uid {
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 2px;
-    }
-
-    .buy-in-wrap {
-      padding: 0 18px 18px;
-    }
-
-    .buy-in-btn {
-      width: 100%;
-      background: #071326;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 12px 16px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
+      margin: 0 auto 8px;
     }
 
     .quick-tiles {
@@ -297,34 +571,18 @@
       background: #fff;
       border: none;
       border-right: 1px solid #e5e7eb;
-      padding: 14px 8px;
+      padding: 14px 6px;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      cursor: pointer;
-      color: #1f2937;
       font-size: 12px;
       font-weight: 600;
+      cursor: pointer;
     }
 
     .quick-tile:last-child {
       border-right: none;
-    }
-
-    .quick-tile:hover {
-      background: #f9fafb;
-    }
-
-    .quick-icon {
-      font-size: 19px;
-      line-height: 1;
-    }
-
-    .menu-accordion-list {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
     }
 
     .menu-row-btn {
@@ -332,433 +590,84 @@
       background: #fff;
       border: none;
       border-bottom: 1px solid #e5e7eb;
-      padding: 15px 20px;
+      padding: 14px 20px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      font-size: 14px;
-      font-weight: 500;
-      color: #1f2937;
-      cursor: pointer;
-      text-align: left;
-    }
-
-    .menu-row-btn:hover {
-      background: #f9fafb;
-    }
-
-    .menu-row-left {
-      display: flex;
       align-items: center;
-      gap: 12px;
+      font-size: 14px;
+      cursor: pointer;
     }
 
-    .menu-accordion-panel {
+    .acc-body {
       display: none;
       padding: 12px 20px 16px;
       background: #f9fafb;
       border-bottom: 1px solid #e5e7eb;
       font-size: 13px;
-      color: #374151;
     }
 
-    .menu-accordion-panel.open {
+    .acc-body.open {
       display: block;
     }
 
-    .drawer-footer-signout {
-      padding: 14px 18px 20px;
+    /* Footer matching Image 4 bottom */
+    .site-footer {
+      border-top: 1px solid var(--line);
       background: #fff;
-      position: sticky;
-      bottom: 0;
-      border-top: 1px solid #e5e7eb;
-    }
-
-    .signout-outline-btn {
-      width: 100%;
-      background: #fff;
-      color: var(--danger);
-      border: 1px solid #fca5a5;
-      border-radius: 8px;
-      padding: 11px 14px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    /* Hero */
-    .hero {
-      max-width: 1280px;
-      margin: 24px auto 0;
-      padding: 0 20px;
-    }
-
-    .hero-box {
-      background: linear-gradient(125deg, #142238 0%, #271019 55%, #5a0710 100%);
-      color: #fff;
-      border-radius: 22px;
-      padding: 40px 32px;
-      display: grid;
-      grid-template-columns: 1.35fr 1fr;
-      gap: 28px;
-      align-items: center;
-      box-shadow: 0 18px 40px rgba(20, 34, 56, 0.16);
-    }
-
-    .hero-tag {
-      display: inline-block;
-      background: rgba(198, 156, 83, 0.2);
-      border: 1px solid rgba(231, 207, 160, 0.45);
-      color: var(--gold-light);
-      padding: 5px 12px;
-      border-radius: 999px;
+      padding: 44px 24px 28px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.8px;
-      margin-bottom: 14px;
-      text-transform: uppercase;
+      color: #333;
     }
 
-    .hero h1 {
-      font-size: clamp(28px, 4vw, 42px);
-      line-height: 1.15;
-      margin-bottom: 12px;
-    }
-
-    .hero p {
-      color: #e7e2da;
-      font-size: 15px;
-      max-width: 560px;
-      margin-bottom: 22px;
-    }
-
-    .hero-stats {
+    .footer-grid {
+      max-width: 1200px;
+      margin: 0 auto;
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
+      grid-template-columns: repeat(4, 1fr) 1.4fr;
+      gap: 24px;
     }
 
-    .stat-card {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 16px;
-      padding: 18px;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: var(--gold-light);
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
-
-    .stat-value {
-      font-size: 22px;
-      font-weight: 800;
-      margin-top: 6px;
-      color: #fff;
-    }
-
-    .container {
-      max-width: 1280px;
-      margin: 34px auto;
-      padding: 0 20px;
-    }
-
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
-    }
-
-    .section-title {
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--navy);
-    }
-
-    .section-sub {
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .filter-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 22px;
-    }
-
-    .filter-pill {
-      padding: 8px 16px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--navy);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .filter-pill.active {
-      background: var(--navy);
-      color: #fff;
-      border-color: var(--navy);
-    }
-
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 8px 24px rgba(20, 34, 56, 0.05);
-    }
-
-    .card-img {
-      width: 100%;
-      height: 205px;
-      object-fit: cover;
-      background: #f1ece4;
-    }
-
-    .card-body {
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      gap: 10px;
-    }
-
-    .badge {
-      display: inline-block;
-      width: fit-content;
+    .footer-col h4 {
       font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: #f6efe2;
-      color: var(--maroon);
+      letter-spacing: 1.5px;
       text-transform: uppercase;
+      margin-bottom: 12px;
+      color: #111;
     }
 
-    .card-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--navy);
-    }
-
-    .card-desc {
-      font-size: 13px;
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
       color: var(--muted);
+    }
+
+    .newsletter-input-row {
+      display: flex;
+      border-bottom: 1px solid #222;
+      padding-bottom: 6px;
+      margin: 12px 0 8px;
+    }
+
+    .newsletter-input-row input {
+      border: none;
+      outline: none;
       flex: 1;
-    }
-
-    .price-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-top: 6px;
-    }
-
-    .price {
-      font-size: 19px;
-      font-weight: 800;
-      color: var(--maroon);
-    }
-
-    .reward {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--success);
-    }
-
-    /* Sub-page / Feature Views (Pay Out, Contact Us, Snatch Orders) */
-    .feature-view-card {
-      display: none;
-      margin-top: 32px;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 26px;
-      box-shadow: 0 12px 32px rgba(20, 34, 56, 0.07);
-    }
-
-    .feature-view-card.active {
-      display: block;
-    }
-
-    /* Pay Out styling matching Image 2 */
-    .payout-wallet-card {
-      background: #1d2d44;
-      color: #fff;
-      border-radius: 14px;
-      padding: 22px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 14px 0 20px;
-    }
-
-    .payout-wallet-amount {
-      font-size: 30px;
-      font-weight: 800;
-      margin-top: 6px;
-    }
-
-    .collection-box {
-      border: 1px solid #86efac;
-      background: #f0fdf4;
-      border-radius: 12px;
-      padding: 16px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin: 10px 0 20px;
-    }
-
-    .rules-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 16px;
       font-size: 13px;
-      color: #475569;
-      margin: 14px 0 20px;
     }
 
-    /* Contact Us styling matching Image 3 */
-    .help-hero-banner {
-      position: relative;
-      border-radius: 10px;
-      overflow: hidden;
-      min-height: 230px;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      color: #fff;
-      background: linear-gradient(rgba(30, 27, 24, 0.55), rgba(30, 27, 24, 0.65)),
-        url("./images/ring-1.jpg") center/cover no-repeat, #4b4640;
-      padding: 24px;
-      margin-bottom: 20px;
-    }
-
-    .help-overlay-card {
-      background: rgba(120, 118, 115, 0.72);
-      backdrop-filter: blur(4px);
-      border-radius: 12px;
-      padding: 20px 24px;
-      max-width: 520px;
-    }
-
-    .social-channel-btn {
-      width: 100%;
-      background: #fff;
-      border: 1px solid #111827;
-      border-radius: 6px;
-      padding: 16px 20px;
-      margin-bottom: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      font-size: 16px;
-      font-weight: 700;
-      color: #111827;
-    }
-
-    .social-channel-btn:hover {
-      background: #f9fafb;
-    }
-
-    /* Snatch 25 Queue */
-    .tab-strip {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      border-bottom: 1px solid #e5e7eb;
-      margin-bottom: 8px;
-    }
-
-    .tab-btn {
+    .newsletter-input-row button {
       background: none;
       border: none;
-      padding: 13px 10px;
-      font-size: 15px;
-      font-weight: 700;
-      color: #4b5563;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-    }
-
-    .tab-btn.active {
-      color: #111827;
-      border-bottom-color: #111827;
-    }
-
-    .queue-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 15px 8px;
-      border-bottom: 1px solid #eceef2;
-    }
-
-    .queue-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .queue-num {
-      font-size: 18px;
+      font-size: 11px;
       font-weight: 800;
-      color: #111827;
-      width: 26px;
-      text-align: center;
-    }
-
-    .queue-thumb {
-      width: 64px;
-      height: 64px;
-      object-fit: cover;
-      border-radius: 10px;
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
-    }
-
-    .action-pair {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 20px;
-    }
-
-    .start-batch-btn {
-      width: 100%;
-      margin-top: 12px;
-      padding: 16px 20px;
-      border-radius: 10px;
-      border: none;
-      background: var(--navy);
-      color: #fff;
-      font-size: 17px;
-      font-weight: 800;
+      letter-spacing: 1.5px;
       cursor: pointer;
     }
 
-    /* Modal & Account Details Modal (Image 4 style) */
+    /* Modal */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -776,411 +685,404 @@
 
     .modal-box {
       background: #fff;
-      border-radius: 14px;
-      max-width: 470px;
+      max-width: 460px;
       width: 100%;
       overflow: hidden;
-      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.3);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       max-height: 90vh;
       overflow-y: auto;
     }
 
-    .modal-banner-header {
-      background: #cbd5e1;
-      padding: 18px 22px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .modal-body-pad {
-      padding: 22px;
-    }
-
-    .account-metrics-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px 24px;
-      margin-bottom: 22px;
-    }
-
-    .metric-title {
-      font-size: 13px;
-      color: #4b5563;
-      margin-bottom: 4px;
-    }
-
-    .metric-val {
-      font-size: 17px;
-      font-weight: 700;
-      color: #111827;
-    }
-
-    .phone-row {
-      display: grid;
-      grid-template-columns: 125px 1fr;
-      border: 1px solid #cbd5e1;
+    .btn {
+      border: none;
       border-radius: 8px;
-      overflow: hidden;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
     }
 
-    .phone-code {
+    .btn-navy {
       background: var(--navy);
       color: #fff;
-      border: none;
-      padding: 11px 10px;
-      font-weight: 700;
-      font-size: 13px;
     }
 
-    .phone-input {
-      border: none;
-      padding: 11px 12px;
-      font-size: 14px;
-      width: 100%;
-      outline: none;
+    .btn-purple {
+      background: var(--purple);
+      color: #fff;
+    }
+
+    .btn-outline {
+      background: #fff;
+      color: #111;
+      border: 1.5px solid #111;
     }
 
     .input {
       width: 100%;
-      padding: 11px 13px;
-      border-radius: 8px;
+      padding: 10px 12px;
       border: 1px solid #cbd5e1;
+      border-radius: 8px;
       font-size: 14px;
-    }
-
-    .form-group {
-      margin-bottom: 14px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: #111827;
     }
 
     .toast {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      background: var(--navy);
+      background: #111827;
       color: #fff;
       padding: 12px 18px;
-      border-radius: 12px;
+      border-radius: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 13px;
-      font-weight: 600;
       z-index: 120;
       opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.2s ease;
+      transition: opacity 0.2s ease;
       pointer-events: none;
     }
 
     .toast.show {
       opacity: 1;
-      transform: translateY(0);
     }
 
-    footer {
-      margin-top: 56px;
-      background: var(--navy);
-      color: #d6dde8;
-      text-align: center;
-      padding: 24px 16px;
-      font-size: 13px;
-    }
-
-    @media (max-width: 860px) {
-      .hero-box {
+    @media (max-width: 900px) {
+      .three-cards-grid,
+      .two-feature-grid,
+      .editorial-row,
+      .footer-grid {
         grid-template-columns: 1fr;
       }
-      .nav-links {
+      .top-cat-nav {
         display: none;
       }
     }
   </style>
 </head>
 <body>
-  <div class="promo-bar">
-    UP TO 40% OFF* JEWELRY SITEWIDE — CRAFTED FOR ROYALTY
+  <div class="top-utility">
+    <div class="util-left">
+      <span id="statusSummary">Member: Guest &bull; Wallet: &#2547; 698.34</span>
+    </div>
+    <div class="util-right">
+      <button type="button" class="util-btn" id="topSnatchBtn" style="display:none;">
+        Snatch Orders (<span id="snatchBadge">0 / 25</span>)
+      </button>
+      <button type="button" class="util-btn primary" id="topAuthBtn">Login / Register</button>
+      <a href="./admin.html" class="util-btn">Admin</a>
+    </div>
   </div>
 
-  <header class="site-header">
-    <div class="header-inner">
-      <div class="brand-left">
-        <button class="menu-btn" id="menuToggleBtn" aria-label="Open menu">&#9776;</button>
-        <div class="brand-logo" id="brandHomeBtn">
-          <span class="brand-title">ROYAL SUNSTONE</span>
-          <span class="brand-sub">— JEWELS — Crafted for Royalty</span>
-        </div>
+  <header class="main-header">
+    <div class="header-top-row">
+      <button type="button" class="menu-3line-btn" id="menu3LineBtn" aria-label="Menu">&#9776;</button>
+      <div class="brand-wordmark" id="brandHomeBtn">
+        <div class="brand-main">ROYAL SUNSTONE</div>
+        <div class="brand-sub">JEWELS &bull; CRAFTED FOR ROYALTY</div>
       </div>
-
-      <nav class="nav-links">
-        <button data-scroll="catalogSection">Collection</button>
-        <button id="navSnatchBtn">Snatch Orders</button>
-        <button id="navContactBtn">Contact Us</button>
-        <a href="./admin.html">Admin Panel</a>
-      </nav>
-
-      <div class="header-actions">
-        <button class="btn btn-gold btn-pill" id="headerSnatchBtn" style="display:none;">
-          Snatch Orders (<span id="snatchProgressBadge">0 / 25</span>)
-        </button>
-        <button class="btn btn-navy btn-pill" id="authActionBtn">
-          Login / Register
-        </button>
+      <div class="header-right-group">
+        <button type="button" class="util-btn" id="headerContactBtn">Contact Us</button>
       </div>
     </div>
+
+    <nav class="top-cat-nav">
+      <button data-cat="All">Featured</button>
+      <button data-cat="Rings">Sunstones</button>
+      <button data-cat="Rings">Rings</button>
+      <button data-cat="Necklaces">Necklaces</button>
+      <button data-cat="Bracelets">Bracelets</button>
+      <button data-cat="Earrings">Earrings</button>
+      <button id="navSnatchOrdersBtn">Snatch Orders</button>
+      <button id="navContactUsBtn">Contact Us</button>
+    </nav>
   </header>
 
-  <!-- Left 3-Line Drawer (Image 1 structure) -->
+  <!-- Left 3-Line Drawer -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside class="side-drawer" id="sideDrawer">
-    <div class="drawer-top-close">
-      <button class="close-btn" id="closeDrawerBtn" aria-label="Close drawer">&times;</button>
+    <div style="display:flex; justify-content:flex-end; padding:12px 16px 0;">
+      <button type="button" id="closeDrawerBtn" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
     </div>
 
-    <div class="profile-header">
+    <div style="text-align:center; padding:8px 20px 16px;">
       <div class="avatar-circle">&#128100;</div>
-      <div class="profile-name" id="drawerUserName">shuvoum</div>
-      <div class="profile-uid" id="drawerUserUid">UID:2410380</div>
+      <div style="font-weight:700; font-size:16px;" id="drawerName">shuvoum</div>
+      <div style="font-size:12px; color:#6b7280;" id="drawerUid">UID:2410380</div>
     </div>
 
-    <div class="buy-in-wrap">
-      <button type="button" class="buy-in-btn" id="drawerBuyInBtn">Buy In</button>
+    <div style="padding:0 18px 16px;">
+      <button type="button" id="drawerBuyInBtn" style="width:100%; background:#071326; color:#fff; border:none; border-radius:8px; padding:12px; font-size:15px; font-weight:700; cursor:pointer;">
+        Buy In
+      </button>
     </div>
 
     <div class="quick-tiles">
       <button type="button" class="quick-tile" id="drawerPayOutTile">
-        <span class="quick-icon">&#2547;</span>
+        <span style="font-size:18px;">&#2547;</span>
         <span>Pay Out</span>
       </button>
       <button type="button" class="quick-tile" id="drawerContactTile">
-        <span class="quick-icon">&#9993;</span>
+        <span style="font-size:18px;">&#9993;</span>
         <span>Contact us</span>
       </button>
       <button type="button" class="quick-tile" id="drawerAccountTile">
-        <span class="quick-icon">&#128179;</span>
+        <span style="font-size:18px;">&#128179;</span>
         <span>Account details</span>
       </button>
     </div>
 
-    <div class="menu-accordion-list">
+    <div>
       <button type="button" class="menu-row-btn" data-acc="bind">
-        <span class="menu-row-left"><span>&#128179;</span><span>Bind Account</span></span>
-        <span>+</span>
+        <span>&#128179; &nbsp; Bind Account</span><span>+</span>
       </button>
-      <div class="menu-accordion-panel" id="acc-bind">
+      <div class="acc-body" id="acc-bind">
         <form id="bindAccountForm">
-          <div class="form-group">
-            <label for="bindMethod">Method</label>
+          <div style="margin-bottom:8px;">
+            <label style="display:block; font-weight:600; margin-bottom:4px;">Method</label>
             <select id="bindMethod" class="input">
               <option value="bkash">bkash</option>
               <option value="nagad">nagad</option>
-              <option value="bank">Bank Transfer</option>
+              <option value="bank">Bank</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="bindNumber">Account / Wallet Number</label>
-            <input type="text" id="bindNumber" class="input" required placeholder="45643 or 01XXXXXXXXX" />
+          <div style="margin-bottom:8px;">
+            <label style="display:block; font-weight:600; margin-bottom:4px;">Account / Wallet</label>
+            <input type="text" id="bindAddress" class="input" required placeholder="45643" />
           </div>
-          <button type="submit" class="btn btn-navy" style="width:100%;">Save Collection Address</button>
+          <button type="submit" class="btn btn-navy" style="width:100%;">Save Account</button>
         </form>
       </div>
 
       <button type="button" class="menu-row-btn" data-acc="checkin">
-        <span class="menu-row-left"><span>&#8680;</span><span>Check In</span></span>
-        <span>+</span>
+        <span>&#8680; &nbsp; Check In</span><span>+</span>
       </button>
-      <div class="menu-accordion-panel" id="acc-checkin">
-        <p style="margin-bottom:10px;">Claim daily member check-in bonus into your wallet.</p>
-        <button type="button" class="btn btn-gold" id="dailyCheckInBtn" style="width:100%;">Claim Daily Check-In (+$10.00)</button>
+      <div class="acc-body" id="acc-checkin">
+        <p style="margin-bottom:8px;">Claim daily member check-in reward.</p>
+        <button type="button" class="btn btn-navy" id="checkInBtn" style="width:100%;">Check In (+&#2547;10.00)</button>
       </div>
 
       <button type="button" class="menu-row-btn" data-acc="history">
-        <span class="menu-row-left"><span>&#128340;</span><span>History</span></span>
-        <span>+</span>
+        <span>&#128340; &nbsp; History</span><span>+</span>
       </button>
-      <div class="menu-accordion-panel" id="acc-history" style="max-height:200px; overflow-y:auto;">
-        <div id="drawerHistoryContent">No activity recorded yet.</div>
+      <div class="acc-body" id="acc-history" style="max-height:180px; overflow-y:auto;">
+        <div id="historyListBox">No history yet.</div>
       </div>
 
       <button type="button" class="menu-row-btn" data-acc="password">
-        <span class="menu-row-left"><span>&#9881;</span><span>Change Password</span></span>
-        <span>+</span>
+        <span>&#9881; &nbsp; Change Password</span><span>+</span>
       </button>
-      <div class="menu-accordion-panel" id="acc-password">
-        <form id="changePasswordForm">
-          <div class="form-group">
-            <label for="newPassInput">New Password</label>
-            <input type="password" id="newPassInput" class="input" required minlength="6" placeholder="At least 6 chars" />
-          </div>
+      <div class="acc-body" id="acc-password">
+        <form id="changePassForm">
+          <input type="password" id="newPassField" class="input" required minlength="6" placeholder="New password" style="margin-bottom:8px;" />
           <button type="submit" class="btn btn-navy" style="width:100%;">Update Password</button>
         </form>
       </div>
 
       <button type="button" class="menu-row-btn" data-acc="help">
-        <span class="menu-row-left"><span>?</span><span>Help</span></span>
-        <span>+</span>
+        <span>? &nbsp; Help</span><span>+</span>
       </button>
-      <div class="menu-accordion-panel" id="acc-help">
-        Log in with your mobile number to unlock Snatch Orders, bind your payout account, or reach support via Contact Us.
+      <div class="acc-body" id="acc-help">
+        Sign in with your mobile number to use Snatch Orders, Pay Out, and Account Details.
       </div>
 
       <button type="button" class="menu-row-btn" data-acc="about">
-        <span class="menu-row-left"><span>&#9432;</span><span>About Us</span></span>
-        <span>+</span>
+        <span>&#9432; &nbsp; About Us</span><span>+</span>
       </button>
-      <div class="menu-accordion-panel" id="acc-about">
-        ROYAL SUNSTONE — JEWELS is dedicated to fine sunstone pieces and member order allocations.
+      <div class="acc-body" id="acc-about">
+        ROYAL SUNSTONE — JEWELS fine jewelry collection and member allocation portal.
       </div>
     </div>
 
-    <div class="drawer-footer-signout">
-      <button type="button" class="signout-outline-btn" id="drawerSignOutBtn">Sign Out</button>
+    <div style="margin-top:auto; padding:14px 18px 20px; border-top:1px solid #e5e7eb;">
+      <button type="button" id="drawerSignOutBtn" style="width:100%; background:#fff; color:#dc2626; border:1px solid #fca5a5; border-radius:8px; padding:11px; font-weight:700; cursor:pointer;">
+        Sign Out
+      </button>
     </div>
   </aside>
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="hero-box">
-      <div>
-        <span class="hero-tag">Royal Sunstone Fine Jewelry</span>
-        <h1>Timeless Sunstone &amp; Gold Craftsmanship</h1>
-        <p>
-          Explore our showcase collection. Log in with your mobile number to unlock Snatch Orders,
-          Pay Out, Account Details, and Concierge contacts.
-        </p>
-        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-          <button class="btn btn-gold" id="heroPrimaryBtn">Login with Phone</button>
-          <button class="btn btn-outline" data-scroll="catalogSection">Browse Showcase</button>
+  <!-- 1. Hero Banner (Image 1) -->
+  <section class="bf-hero">
+    <div class="bf-hero-inner">
+      <div class="bf-title-top">BLACK FRIDAY</div>
+      <div class="bf-sub-row">
+        <span class="bf-upto">UP TO</span>
+        <span class="bf-off-big">40% OFF*</span>
+      </div>
+      <div class="bf-jewel-tag">JEWELRY</div>
+      <button type="button" class="shop-now-white-btn" id="heroShopNowBtn">SHOP NOW</button>
+      <button type="button" class="hero-down-chevron" id="heroScrollDownBtn" aria-label="Scroll down">&#8964;</button>
+    </div>
+  </section>
+
+  <!-- Dynamic Panels: Snatch Orders (25), Pay Out, Contact Us -->
+  <section class="dynamic-panel" id="snatchPanel"></section>
+  <section class="dynamic-panel" id="payOutPanel"></section>
+  <section class="dynamic-panel" id="contactPanel"></section>
+
+  <!-- 2. Crafted By Hand, With Heart — 3 Showcase Cards (Image 1 bottom) -->
+  <section class="section-wrap" id="craftedSection">
+    <div class="section-heading-center">
+      <h2>CRAFTED BY HAND, WITH HEART</h2>
+      <p>Browse our selection of timeless fine jewelry, made to last a lifetime.</p>
+    </div>
+
+    <div class="three-cards-grid" id="threeShowcaseGrid"></div>
+  </section>
+
+  <!-- 3. Two-Column Feature Cards (Image 2 top) -->
+  <section class="section-wrap" style="padding-top:10px;">
+    <div class="two-feature-grid">
+      <div class="feature-box-card">
+        <img id="exploreCollectionImg" class="feature-box-img" alt="Explore the Collection" />
+        <div class="feature-box-content">
+          <h3>EXPLORE THE COLLECTION</h3>
+          <p>Select a setting and a sunstone, and we'll bring them together to create your piece.</p>
+          <div class="outline-btn-row">
+            <button type="button" class="ghost-rect-btn" data-filter-scroll="Rings">START WITH A SUNSTONE</button>
+            <button type="button" class="ghost-rect-btn" data-filter-scroll="Necklaces">START WITH THE SETTING</button>
+          </div>
         </div>
       </div>
 
-      <div class="hero-stats">
-        <div class="stat-card">
-          <div class="stat-label">Wallet Funds</div>
-          <div class="stat-value" id="heroBalanceText">&#2547; 698.34</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Current Order</div>
-          <div class="stat-value" id="heroOrderStepText">0 / 25</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Daily Profit</div>
-          <div class="stat-value" id="heroProfitText">0.00</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Member Account</div>
-          <div class="stat-value" id="heroMemberText">Guest</div>
+      <div class="feature-box-card">
+        <img id="creativeStudioImg" class="feature-box-img" alt="Explore the Creative Studio" />
+        <div class="feature-box-content">
+          <h3>EXPLORE THE CREATIVE STUDIO</h3>
+          <p>Design a custom piece of fine jewelry through an intuitive, guided process.</p>
+          <div class="outline-btn-row">
+            <button type="button" class="ghost-rect-btn" data-filter-scroll="Bracelets">VISIT THE CREATIVE STUDIO</button>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <main class="container">
-    <!-- Main Page Showcase (No direct order confirmation here) -->
-    <section id="catalogSection">
-      <div class="section-head">
-        <div>
-          <h2 class="section-title">Signature Collection Showcase</h2>
-          <p class="section-sub">View-only catalog — orders are placed inside Snatch Orders after mobile login</p>
-        </div>
-        <span class="section-sub" id="syncStatusText">Showcase ready</span>
+  <!-- 4. Exclusive Collections Carousel (Image 2 & 3) -->
+  <section class="exclusive-band">
+    <div class="section-heading-center" style="margin-bottom:14px;">
+      <h2>EXCLUSIVE COLLECTIONS</h2>
+    </div>
+
+    <div class="carousel-controls">
+      <button type="button" class="carousel-arrow" id="prevSlideBtn" aria-label="Previous">&lsaquo;</button>
+      <div class="carousel-dots">
+        <button type="button" class="carousel-dot active" data-slide="0"></button>
+        <button type="button" class="carousel-dot" data-slide="1"></button>
+        <button type="button" class="carousel-dot" data-slide="2"></button>
+      </div>
+      <button type="button" class="carousel-arrow" id="nextSlideBtn" aria-label="Next">&rsaquo;</button>
+    </div>
+
+    <div class="exclusive-banner-box" id="exclusiveSlideBox"></div>
+  </section>
+
+  <!-- 5. World of Royal Sunstone Editorial Blocks (Image 3 bottom & Image 4) -->
+  <section class="section-wrap">
+    <div class="section-heading-center">
+      <h2>WORLD OF ROYAL SUNSTONE</h2>
+    </div>
+
+    <div class="editorial-row">
+      <div class="editorial-text">
+        <h3>CURATED BY THE ASSCHER FAMILY</h3>
+        <p>
+          Natural stones selected according to beauty standards shaped by generations of fine stone
+          expertise. Explore pieces crafted with care and lasting brilliance.
+        </p>
+        <button type="button" class="editorial-link-btn" data-filter-scroll="Earrings">FIND THE PERFECT PIECE &rarr;</button>
+      </div>
+      <img id="editorialImg1" class="editorial-img" alt="Curated Stone Craft" />
+    </div>
+
+    <div class="editorial-row">
+      <img id="editorialImg2" class="editorial-img" alt="Custom Creations" />
+      <div class="editorial-text">
+        <h3>CUSTOM CREATIONS</h3>
+        <p>
+          Bring your unique vision to life with Royal Sunstone Jewels. From signature rings to
+          curated fine jewelry styles, discover timeless craftsmanship.
+        </p>
+        <button type="button" class="editorial-link-btn" data-filter-scroll="All">CREATE YOUR DESIGN &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer matching Image 4 bottom -->
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>CUSTOMER CARE</h4>
+        <ul>
+          <li><button type="button" id="footerContactLink" style="background:none; border:none; color:inherit; cursor:pointer; padding:0;">Contact Us</button></li>
+          <li><button type="button" id="footerSnatchLink" style="background:none; border:none; color:inherit; cursor:pointer; padding:0;">Snatch Orders</button></li>
+          <li>FAQ</li>
+          <li>Returns</li>
+        </ul>
       </div>
 
-      <div class="filter-row" id="categoryFilters">
-        <button class="filter-pill active" data-cat="All">All</button>
-        <button class="filter-pill" data-cat="Rings">Rings</button>
-        <button class="filter-pill" data-cat="Necklaces">Necklaces</button>
-        <button class="filter-pill" data-cat="Bracelets">Bracelets</button>
-        <button class="filter-pill" data-cat="Earrings">Earrings</button>
+      <div class="footer-col">
+        <h4>WHY ROYAL SUNSTONE</h4>
+        <ul>
+          <li>Return Policy</li>
+          <li>Conflict-Free Stones</li>
+          <li>Quality &amp; Value</li>
+          <li>Secure Shipping</li>
+          <li>Jewelry Packaging</li>
+        </ul>
       </div>
 
-      <div class="grid-3" id="productsGrid"></div>
-    </section>
-
-    <!-- 1. Pay Out View (Image 2) -->
-    <section class="feature-view-card" id="payOutView">
-      <div class="breadcrumb-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span class="section-sub">Home &gt; Pay Out</span>
-        <button type="button" class="btn btn-outline" data-close-view="payOutView">&times; Close</button>
-      </div>
-      <h2 class="snatch-heading" style="font-size:28px; font-weight:800; color:#111827;">Pay Out</h2>
-
-      <div class="payout-wallet-card">
-        <div>
-          <div style="font-size:14px; color:#cbd5e1;">Wallet Funds</div>
-          <div class="payout-wallet-amount" id="payoutWalletAmount">&#2547; 698.34</div>
-        </div>
-        <div style="font-size:28px;">&#128091;</div>
+      <div class="footer-col">
+        <h4>ABOUT ROYAL SUNSTONE</h4>
+        <ul>
+          <li>Craftsmanship</li>
+          <li>The Clear Cut</li>
+          <li>Reviews</li>
+          <li>Sustainability</li>
+          <li><a href="./admin.html">Control Panel</a></li>
+        </ul>
       </div>
 
-      <div style="font-size:14px; font-weight:700; color:#111827;">Collection Address</div>
-      <div class="collection-box">
-        <div>
-          <div style="font-weight:700; color:#111827; font-size:15px;">
-            <span style="color:#e11d48; margin-right:6px;">&#10148;</span>
-            <span id="boundMethodLabel">bkash</span>
+      <div class="footer-col">
+        <h4>SHOP WITH US</h4>
+        <ul>
+          <li>Book an Appointment</li>
+          <li>Locations</li>
+        </ul>
+      </div>
+
+      <div>
+        <div style="font-weight:700; margin-bottom:4px;">Join the Royal Sunstone List</div>
+        <div style="color:var(--muted);">Get Exclusive Offers and News.</div>
+        <form id="newsletterForm">
+          <div class="newsletter-input-row">
+            <input type="email" id="newsletterEmail" required placeholder="Email Address" />
+            <button type="submit">JOIN</button>
           </div>
-          <div style="color:#4b5563; font-size:14px; margin-top:2px;" id="boundAddressLabel">45643</div>
-        </div>
-        <span style="color:#16a34a; font-size:20px; font-weight:800;">&#10003;</span>
-      </div>
-
-      <form id="payOutForm">
-        <div class="form-group">
-          <label for="payOutAmountInput">Pay Out Amount</label>
-          <input
-            type="number"
-            id="payOutAmountInput"
-            class="input"
-            step="0.01"
-            min="1"
-            required
-            placeholder="&#2547; Enter amount"
-          />
-        </div>
-
-        <div class="rules-box">
-          <div style="font-weight:700; margin-bottom:6px;">Rules : Minimum Pay Out &#2547;500</div>
-          <div style="font-weight:700; margin-bottom:4px;">Tips:</div>
-          <p>
-            Please bind in the correct bank account information. If the Pay Out is successful but the
-            bank account details are wrong, platform will not be responsible. Therefore, please
-            double-check your bank account information.
-          </p>
-        </div>
-
-        <button type="submit" class="btn btn-black" style="width:100%; padding:15px; font-size:16px;">
-          Pay Out
-        </button>
-      </form>
-    </section>
-
-    <!-- 2. Contact Us View (Image 3: Telegram & WhatsApp controlled from Admin Panel) -->
-    <section class="feature-view-card" id="contactUsView">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <span class="section-sub">Home &gt; Contact Us</span>
-        <button type="button" class="btn btn-outline" data-close-view="contactUsView">&times; Close</button>
-      </div>
-
-      <div class="help-hero-banner">
-        <div class="help-overlay-card">
-          <h2 style="font-size:26px; font-weight:800; margin-bottom:8px;">
-            Royal Sunstone Help Center
-          </h2>
-          <p style="font-size:14px; line-height:1.5;">
-            Our jewellery pieces are more than an accessory—they are an expression of identity,
-            emotion, and timeless elegance. Reach our official support channels set in Control Panel.
-          </p>
+        </form>
+        <p style="font-size:11px; color:var(--muted);">
+          By clicking Join, you agree to our Terms &amp; Privacy Policy.
+        </p>
+        <div style="margin-top:14px; display:flex; flex-direction:column; gap:6px; font-weight:600;">
+          <span>f &nbsp; Facebook</span>
+          <span>&#9678; &nbsp; Instagram</span>
+          <span>P &nbsp; Pinterest</span>
         </div>
       </div>
+    </div>
+  </footer>
 
-      <h3 style="font-size:18px; font-weight:800; color:#111827; margin-bottom:14px;">
-        Knowledge Base
-      </h3>
+  <!-- Modal -->
+  <div class="modal-backdrop" id="appModal">
+    <div class="modal-box" id="modalBox"></div>
+  </div>
 
-      <button type="button" class="social-channel-btn" id
+  <div class="toast" id="toastBox"></div>
+
+  <script type="module">
+    import { renderAllViews, initChatListener, initFirebaseSync } from "./action.js";
+    renderAllViews();
+    initChatListener();
+    initFirebaseSync();
+  </script>
+</body>
+</html>

@@ -3,17 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Control Panel — ROYAL SUNSTONE JEWELS</title>
+  <title>Control Panel — ROYAL SUNSTONE JEWELS</title>
   <style>
     :root {
-      --navy: #142238;
+      --navy: #0b1628;
       --maroon: #5a0710;
       --gold: #c69c53;
       --bg: #f6f3ee;
       --card: #ffffff;
-      --text: #1c1917;
-      --muted: #6b625b;
       --border: #e5ddd1;
+      --muted: #6b625b;
     }
 
     * {
@@ -23,9 +22,9 @@
     }
 
     body {
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg);
-      color: var(--text);
+      color: #1c1917;
       padding: 24px 16px;
     }
 
@@ -38,7 +37,7 @@
       background: var(--navy);
       color: #fff;
       padding: 18px 24px;
-      border-radius: 16px;
+      border-radius: 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -49,7 +48,7 @@
 
     .btn {
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 10px 16px;
       font-size: 13px;
       font-weight: 700;
@@ -71,17 +70,16 @@
       color: var(--navy);
     }
 
-    .login-card, .panel {
+    .panel, .login-card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 8px 24px rgba(20, 34, 56, 0.05);
+      border-radius: 14px;
+      padding: 22px;
     }
 
     .login-card {
       max-width: 420px;
-      margin: 40px auto;
+      margin: 36px auto;
     }
 
     .form-group {
@@ -93,26 +91,25 @@
       font-size: 13px;
       font-weight: 600;
       margin-bottom: 6px;
-      color: var(--navy);
     }
 
     .input, select, textarea {
       width: 100%;
       padding: 10px 12px;
-      border-radius: 10px;
       border: 1px solid var(--border);
+      border-radius: 8px;
       font-size: 14px;
     }
 
     .dash-grid {
       display: grid;
       grid-template-columns: 1fr 1.25fr;
-      gap: 22px;
+      gap: 20px;
     }
 
     .item-row {
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 10px;
       padding: 12px 14px;
       margin-bottom: 10px;
       display: flex;
@@ -138,74 +135,60 @@
   <div class="wrap">
     <header class="topbar">
       <div>
-        <h1 style="font-size:20px;">ROYAL SUNSTONE — CONTROL PANEL</h1>
-        <p style="font-size:12px; color:#e7cfa0;">Support Links, Products &amp; Payout Requests</p>
+        <h1 style="font-size:19px;">ROYAL SUNSTONE — CONTROL PANEL</h1>
+        <p style="font-size:12px; color:#e7cfa0;">Telegram, WhatsApp, Products &amp; Pay Out Requests</p>
       </div>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <a href="./index.html" class="btn btn-light">View Storefront</a>
+      <div style="display:flex; gap:10px;">
+        <a href="./index.html" class="btn btn-light" style="text-decoration:none;">Storefront</a>
         <button id="logoutBtn" class="btn btn-maroon" style="display:none;">Sign Out</button>
       </div>
     </header>
 
     <section id="loginSection" class="login-card">
-      <h2 style="margin-bottom:8px; color:var(--navy);">Admin Sign In</h2>
-      <p class="muted" style="margin-bottom:18px;">Sign in with your Firebase Authentication admin email &amp; password.</p>
+      <h2 style="margin-bottom:8px;">Admin Sign In</h2>
+      <p class="muted" style="margin-bottom:16px;">Sign in with your Firebase admin email &amp; password.</p>
       <form id="adminLoginForm">
         <div class="form-group">
-          <label for="adminEmail">Admin Email</label>
-          <input type="email" id="adminEmail" class="input" required placeholder="admin@example.com" />
+          <label for="adminEmail">Email</label>
+          <input type="email" id="adminEmail" class="input" required />
         </div>
         <div class="form-group">
           <label for="adminPassword">Password</label>
-          <input type="password" id="adminPassword" class="input" required placeholder="Enter password" />
+          <input type="password" id="adminPassword" class="input" required />
         </div>
-        <button type="submit" class="btn btn-gold" style="width:100%;">Login to Dashboard</button>
+        <button type="submit" class="btn btn-gold" style="width:100%;">Login</button>
       </form>
-      <p id="loginError" style="color:#b91c1c; font-size:13px; margin-top:12px;"></p>
+      <p id="loginError" style="color:#dc2626; font-size:13px; margin-top:10px;"></p>
     </section>
 
     <section id="dashboardSection" style="display:none;">
       <div class="dash-grid">
         <div style="display:flex; flex-direction:column; gap:20px;">
-          <!-- Contact Us Telegram & WhatsApp Control -->
           <div class="panel">
-            <h2 style="margin-bottom:12px; color:var(--navy);">Contact Us Channels</h2>
-            <form id="supportConfigForm">
+            <h2 style="margin-bottom:12px;">Contact Us Channels</h2>
+            <form id="supportForm">
               <div class="form-group">
-                <label for="telegramUrlInput">Telegram Link</label>
-                <input
-                  type="url"
-                  id="telegramUrlInput"
-                  class="input"
-                  required
-                  placeholder="https://t.me/your_username"
-                />
+                <label for="tgInput">Telegram Link</label>
+                <input type="url" id="tgInput" class="input" required placeholder="https://t.me/username" />
               </div>
               <div class="form-group">
-                <label for="whatsappNumberInput">WhatsApp Number (with country code)</label>
-                <input
-                  type="text"
-                  id="whatsappNumberInput"
-                  class="input"
-                  required
-                  placeholder="8801712345678"
-                />
+                <label for="waInput">WhatsApp Number (with country code)</label>
+                <input type="text" id="waInput" class="input" required placeholder="8801712345678" />
               </div>
-              <button type="submit" class="btn btn-gold" style="width:100%;">Save Contact Settings</button>
+              <button type="submit" class="btn btn-gold" style="width:100%;">Save Contact Channels</button>
             </form>
           </div>
 
-          <!-- Add Jewelry Product -->
           <div class="panel">
-            <h2 style="margin-bottom:12px; color:var(--navy);">Add Jewelry Product</h2>
-            <form id="addProductForm">
+            <h2 style="margin-bottom:12px;">Add Jewelry Item</h2>
+            <form id="addProdForm">
               <div class="form-group">
-                <label for="prodName">Product Name</label>
-                <input type="text" id="prodName" class="input" required placeholder="Royal Sunstone Necklace" />
+                <label for="pName">Product Name</label>
+                <input type="text" id="pName" class="input" required />
               </div>
               <div class="form-group">
-                <label for="prodCategory">Category</label>
-                <select id="prodCategory" class="input">
+                <label for="pCat">Category</label>
+                <select id="pCat" class="input">
                   <option value="Rings">Rings</option>
                   <option value="Necklaces">Necklaces</option>
                   <option value="Bracelets">Bracelets</option>
@@ -213,35 +196,35 @@
                 </select>
               </div>
               <div class="form-group">
-                <label for="prodPrice">Price (USD)</label>
-                <input type="number" id="prodPrice" class="input" required min="1" step="0.01" value="520" />
+                <label for="pPrice">Price (USD)</label>
+                <input type="number" id="pPrice" class="input" required min="1" step="0.01" value="500" />
               </div>
               <div class="form-group">
-                <label for="prodReward">Reward (BDT)</label>
-                <input type="number" id="prodReward" class="input" required min="0" step="0.01" value="20" />
+                <label for="pReward">Reward (BDT)</label>
+                <input type="number" id="pReward" class="input" required min="0" step="0.01" value="20" />
               </div>
               <div class="form-group">
-                <label for="prodImage">Image Path (optional)</label>
-                <input type="text" id="prodImage" class="input" placeholder="./images/necklace-1.jpg" />
+                <label for="pImg">Image Path (optional)</label>
+                <input type="text" id="pImg" class="input" placeholder="./images/ring-1.jpg" />
               </div>
               <div class="form-group">
-                <label for="prodDesc">Description</label>
-                <textarea id="prodDesc" rows="2" class="input" placeholder="Sunstone piece details..."></textarea>
+                <label for="pDesc">Description</label>
+                <textarea id="pDesc" rows="2" class="input"></textarea>
               </div>
-              <button type="submit" class="btn btn-gold" style="width:100%;">Publish Item</button>
+              <button type="submit" class="btn btn-gold" style="width:100%;">Publish</button>
             </form>
           </div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:20px;">
           <div class="panel">
-            <h2 style="margin-bottom:12px; color:var(--navy);">Pay Out Requests</h2>
-            <div id="adminPayoutsList"></div>
+            <h2 style="margin-bottom:12px;">Pay Out Requests</h2>
+            <div id="payoutsBox"></div>
           </div>
 
           <div class="panel">
-            <h2 style="margin-bottom:12px; color:var(--navy);">Published Products</h2>
-            <div id="adminProductsList"></div>
+            <h2 style="margin-bottom:12px;">Published Products</h2>
+            <div id="prodsBox"></div>
           </div>
         </div>
       </div>
@@ -268,8 +251,8 @@
     const logoutBtn = document.getElementById("logoutBtn");
     const loginError = document.getElementById("loginError");
 
-    function escapeHtml(str) {
-      return String(str ?? "")
+    function esc(s) {
+      return String(s ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
@@ -286,7 +269,7 @@
           document.getElementById("adminPassword").value
         );
       } catch (err) {
-        loginError.textContent = err.message || "Login failed.";
+        loginError.textContent = err.message || "Sign in failed.";
       }
     });
 
@@ -297,7 +280,7 @@
         loginSection.style.display = "none";
         dashboardSection.style.display = "block";
         logoutBtn.style.display = "inline-block";
-        startListeners();
+        startSync();
       } else {
         loginSection.style.display = "block";
         dashboardSection.style.display = "none";
@@ -305,93 +288,18 @@
       }
     });
 
-    document.getElementById("supportConfigForm").addEventListener("submit", async (e) => {
+    document.getElementById("supportForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const telegramUrl = document.getElementById("telegramUrlInput").value.trim();
-      const whatsappNumber = document.getElementById("whatsappNumberInput").value.trim().replace(/\D/g, "");
-      try {
-        await set(ref(db, "support_config"), { telegramUrl, whatsappNumber });
-        alert("Contact Us Telegram & WhatsApp settings saved!");
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
+      const telegramUrl = document.getElementById("tgInput").value.trim();
+      const whatsappNumber = document.getElementById("waInput").value.trim().replace(/\D/g, "");
+      await set(ref(db, "support_config"), { telegramUrl, whatsappNumber });
+      alert("Contact channels updated!");
     });
 
-    document.getElementById("addProductForm").addEventListener("submit", async (e) => {
+    document.getElementById("addProdForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const item = {
-        name: document.getElementById("prodName").value.trim(),
-        category: document.getElementById("prodCategory").value,
-        price: Number(document.getElementById("prodPrice").value || 0),
-        reward: Number(document.getElementById("prodReward").value || 0),
-        image: document.getElementById("prodImage").value.trim(),
-        description: document.getElementById("prodDesc").value.trim()
-      };
-      try {
-        await push(ref(db, "products"), item);
-        e.target.reset();
-        alert("Product published!");
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
-    });
-
-    function startListeners() {
-      onValue(ref(db, "support_config"), (snap) => {
-        if (!snap.exists()) return;
-        const c = snap.val();
-        if (c.telegramUrl) document.getElementById("telegramUrlInput").value = c.telegramUrl;
-        if (c.whatsappNumber) document.getElementById("whatsappNumberInput").value = c.whatsappNumber;
-      });
-
-      const prodList = document.getElementById("adminProductsList");
-      onValue(ref(db, "products"), (snap) => {
-        if (!snap.exists()) {
-          prodList.innerHTML = `<p class="muted">No products yet.</p>`;
-          return;
-        }
-        prodList.innerHTML = Object.entries(snap.val())
-          .map(
-            ([id, p]) => `
-              <div class="item-row">
-                <div>
-                  <strong>${escapeHtml(p.name)}</strong>
-                  <div class="muted">${escapeHtml(p.category)} &bull; $${Number(p.price).toFixed(2)}</div>
-                </div>
-                <button class="btn btn-maroon" data-del="${escapeHtml(id)}">Delete</button>
-              </div>
-            `
-          )
-          .join("");
-
-        prodList.querySelectorAll("[data-del]").forEach((btn) => {
-          btn.addEventListener("click", () => remove(ref(db, `products/${btn.dataset.del}`)));
-        });
-      });
-
-      const payList = document.getElementById("adminPayoutsList");
-      onValue(ref(db, "payouts"), (snap) => {
-        if (!snap.exists()) {
-          payList.innerHTML = `<p class="muted">No pay out requests yet.</p>`;
-          return;
-        }
-        payList.innerHTML = Object.values(snap.val())
-          .reverse()
-          .slice(0, 12)
-          .map(
-            (r) => `
-              <div class="item-row">
-                <div>
-                  <strong>৳${Number(r.amount || 0).toFixed(2)}</strong>
-                  <div class="muted">${escapeHtml(r.fullPhone || "")} &bull; ${escapeHtml(r.method || "")}: ${escapeHtml(r.address || "")}</div>
-                </div>
-                <span class="muted">Pending</span>
-              </div>
-            `
-          )
-          .join("");
-      });
-    }
-  </script>
-</body>
-</html>
+      await push(ref(db, "products"), {
+        name: document.getElementById("pName").value.trim(),
+        category: document.getElementById("pCat").value,
+        price: Number(document.getElementById("pPrice").value || 0),
+        reward: Number(
