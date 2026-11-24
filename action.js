@@ -1,456 +1,572 @@
-import { db } from "./firebase-config.js";
-import { ref, set, onValue, update, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { db, auth } from "./firebase-config.js";
+import {
+  ref,
+  set,
+  push,
+  onValue,
+  update
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const ORDERS_KEY = "rs_orders_100_v1";
-const WALLET_KEY = "rs_wallet_100_v1";
-const USERS_KEY = "rs_users_v1";
-const CURRENT_UID_KEY = "rs_current_uid_v1";
-
-const FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=600&q=80"
+const DEFAULT_PRODUCTS = [
+  {
+    id: "rs-ring-01",
+    name: "Imperial Sunstone Solitaire Ring",
+    category: "Rings",
+    price: 480,
+    reward: 24,
+    image: "./images/ring-1.jpg",
+    description: "Natural sunstone set in 18k warm gold with refined royal prong detailing."
+  },
+  {
+    id: "rs-neck-01",
+    name: "Auric Dawn Sunstone Pendant",
+    category: "Necklaces",
+    price: 690,
+    reward: 35,
+    image: "./images/necklace-1.jpg",
+    description: "Luminous golden-orange sunstone drop suspended from a delicate gold chain."
+  },
+  {
+    id: "rs-brace-01",
+    name: "Sovereign Sunstone Cuff Bracelet",
+    category: "Bracelets",
+    price: 540,
+    reward: 27,
+    image: "./images/bracelet-1.jpg",
+    description: "Sculpted gold cuff accented with hand-selected faceted sunstones."
+  },
+  {
+    id: "rs-ear-01",
+    name: "Solstice Drop Earrings",
+    category: "Earrings",
+    price: 360,
+    reward: 18,
+    image: "./images/earrings-1.jpg",
+    description: "Lightweight drop earrings crafted for evening brilliance and everyday poise."
+  }
 ];
 
-export const DEFAULT_SITE_IMAGES = {
-  heroBg: "hero1.jpg",
-  featureRing: "ring1.jpg"
+const FALLBACK_SVG =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+      <rect width="600" height="400" fill="#efe7da"/>
+      <circle cx="300" cy="175" r="56" fill="#c69c53" opacity="0.35"/>
+      <polygon points="300,125 345,175 300,225 255,175" fill="#5a0710"/>
+      <text x="300" y="275" font-family="Georgia, serif" font-size="22" fill="#142238" text-anchor="middle">ROYAL SUNSTONE JEWELS</text>
+    </svg>`
+  );
+
+const STORAGE_KEY = "royal_sunstone_state_v1";
+
+const state = {
+  selectedCategory: "All",
+  products: [...DEFAULT_PRODUCTS],
+  orders: [],
+  messages: [
+    {
+      id: "welcome-msg",
+      sender: "admin",
+      text: "Welcome to Royal Sunstone Jewels Concierge. How may we assist you today?",
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    }
+  ],
+  user: {
+    name: "Royal Guest",
+    email: "",
+    balance: 1250,
+    quota: 100,
+    loggedIn: false,
+    uid: "guest"
+  }
 };
 
-let siteImages = { ...DEFAULT_SITE_IMAGES };
-
-export function resolveImagePath(nameOrUrl, index = 0) {
-  if (!nameOrUrl || !String(nameOrUrl).trim()) {
-    return FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
-  }
-  const clean = String(nameOrUrl).trim();
-  if (clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("./") || clean.startsWith("/")) {
-    return clean;
-  }
-  return "./images/" + clean;
+function saveLocalState() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        products: state.products,
+        orders: state.orders,
+        messages: state.messages,
+        user: state.user
+      })
+    );
+  } catch (_) {}
 }
 
-export function buildInitialOrders100() {
-  const orders = [];
-
-  // Orders 1 - 25: Automatic with 25 image slots (order-1.jpg to order-25.jpg)
-  for (let i = 1; i <= 25; i++) {
-    orders.push({
-      orderNo: i,
-      isAuto: true,
-      name: `Royal Sunstone Jewel #${i}`,
-      image: `order-${i}.jpg`,
-      price: Number((15 + i * 1.5).toFixed(2)),
-      discount: 20
-    });
-  }
-
-  // Orders 26 - 100: 75 customizable slots (name, image, price, discount)
-  for (let i = 26; i <= 100; i++) {
-    orders.push({
-      orderNo: i,
-      isAuto: false,
-      name: `Custom Royal Piece #${i}`,
-      image: `custom-${i}.jpg`,
-      price: Number((25 + (i - 25) * 1.2).toFixed(2)),
-      discount: 15
-    });
-  }
-
-  return orders;
-}
-
-export function getDefaultWalletState() {
-  return {
-    availableBalance: 5000.00,
-    dailyProfit: 0.00,
-    outOfFunds: 0.00,
-    completedOrders: 0,
-    testCredit: 10000.00,
-    boundMethod: "bKash",
-    boundNumber: "45643"
-  };
-}
-
-let orders100 = JSON.parse(localStorage.getItem(ORDERS_KEY) || "null") || buildInitialOrders100();
-let walletState = JSON.parse(localStorage.getItem(WALLET_KEY) || "null") || getDefaultWalletState();
-
-function persistState() {
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders100));
-  localStorage.setItem(WALLET_KEY, JSON.stringify(walletState));
-}
-
-function getUsers() {
-  return JSON.parse(localStorage.getItem(USERS_KEY) || "{}");
-}
-
-function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-export function getActiveUser() {
-  const uid = localStorage.getItem(CURRENT_UID_KEY);
-  const users = getUsers();
-  if (uid && users[uid]) return users[uid];
-  return { uid: "2410380", username: "shuvoum", isGuest: true };
-}
-
-export function applySiteImagesToDom() {
-  const heroEl = document.getElementById("heroSection");
-  if (heroEl) {
-    const heroSrc = resolveImagePath(siteImages.heroBg, 0);
-    heroEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.65)), url('${heroSrc}')`;
-  }
-
-  const featureImg = document.getElementById("featureJewelImg");
-  if (featureImg) {
-    const featureSrc = resolveImagePath(siteImages.featureRing, 1);
-    featureImg.onerror = function () {
-      this.onerror = null;
-      this.src = FALLBACK_IMAGES[1];
-    };
-    featureImg.src = featureSrc;
-  }
-}
-
-export function initFirebaseSync() {
-  // Sync site images from Firebase
-  onValue(ref(db, "siteImages"), (snapshot) => {
-    if (snapshot.exists()) {
-      siteImages = { ...DEFAULT_SITE_IMAGES, ...snapshot.val() };
-    } else {
-      siteImages = { ...DEFAULT_SITE_IMAGES };
+function loadLocalState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed.products) && parsed.products.length > 0) {
+      state.products = parsed.products;
     }
-    applySiteImagesToDom();
+    if (Array.isArray(parsed.orders)) {
+      state.orders = parsed.orders;
+    }
+    if (Array.isArray(parsed.messages) && parsed.messages.length > 0) {
+      state.messages = parsed.messages;
+    }
+    if (parsed.user && typeof parsed.user === "object") {
+      state.user = { ...state.user, ...parsed.user };
+    }
+  } catch (_) {}
+}
+
+function showToast(message) {
+  const box = document.getElementById("toastBox");
+  if (!box) return;
+  box.textContent = message;
+  box.classList.add("show");
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => box.classList.remove("show"), 2800);
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = String(value);
+}
+
+function renderHeroStats() {
+  setText("snatchCount", state.user.quota);
+  setText("quotaText", state.user.quota);
+  setText("userBalanceText", `$${Number(state.user.balance || 0).toFixed(2)}`);
+  setText("activeOrdersText", state.orders.length);
+  setText("memberStatusText", state.user.loggedIn ? "Verified" : "Guest");
+
+  const authBtn = document.getElementById("authActionBtn");
+  if (authBtn) {
+    authBtn.textContent = state.user.loggedIn ? "Sign Out" : "Login / Register";
+  }
+}
+
+function renderProducts() {
+  const grid = document.getElementById("productsGrid");
+  if (!grid) return;
+
+  const filtered =
+    state.selectedCategory === "All"
+      ? state.products
+      : state.products.filter((p) => p.category === state.selectedCategory);
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="panel"><p class="section-sub">No jewelry items in this category yet.</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered
+    .map((item) => {
+      const safeImg = item.image || FALLBACK_SVG;
+      return `
+        <article class="card">
+          <img
+            src="${safeImg}"
+            alt="${escapeHtml(item.name)}"
+            class="card-img"
+            onerror="this.onerror=null;this.src='${FALLBACK_SVG}';"
+          />
+          <div class="card-body">
+            <span class="badge">${escapeHtml(item.category || "Jewelry")}</span>
+            <h3 class="card-title">${escapeHtml(item.name)}</h3>
+            <p class="card-desc">${escapeHtml(item.description || "")}</p>
+            <div class="price-row">
+              <span class="price">$${Number(item.price || 0).toFixed(2)}</span>
+              <span class="reward">+$${Number(item.reward || 0).toFixed(2)} Reward</span>
+            </div>
+            <button class="btn btn-gold" style="width:100%; justify-content:center; margin-top:8px;" data-snatch-id="${escapeHtml(item.id)}">
+              Snatch This Piece
+            </button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  grid.querySelectorAll("[data-snatch-id]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const prod = state.products.find((p) => p.id === btn.dataset.snatchId);
+      handleSnatchOrder(prod);
+    });
+  });
+}
+
+function renderOrders() {
+  const list = document.getElementById("ordersList");
+  if (!list) return;
+
+  if (!state.orders.length) {
+    list.innerHTML = `<p class="section-sub">No snatch orders placed yet. Click "Snatch" to start.</p>`;
+    return;
+  }
+
+  list.innerHTML = state.orders
+    .slice(0, 8)
+    .map(
+      (ord) => `
+        <div class="order-item">
+          <div>
+            <strong style="color:var(--navy); font-size:14px;">${escapeHtml(ord.itemName)}</strong>
+            <div class="section-sub" style="font-size:12px;">
+              Amount: $${Number(ord.price).toFixed(2)} &bull; Reward: +$${Number(ord.reward).toFixed(2)}
+            </div>
+          </div>
+          <span class="status-pill">${escapeHtml(ord.status || "Completed")}</span>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function renderMessages() {
+  const log = document.getElementById("chatLog");
+  if (!log) return;
+
+  log.innerHTML = state.messages
+    .map(
+      (m) => `
+        <div class="msg ${m.sender === "admin" ? "admin" : "user"}">
+          <div>${escapeHtml(m.text)}</div>
+          <div style="font-size:10px; opacity:0.65; margin-top:3px;">${escapeHtml(m.time || "")}</div>
+        </div>
+      `
+    )
+    .join("");
+
+  log.scrollTop = log.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function handleSnatchOrder(specificProduct) {
+  if (state.user.quota <= 0) {
+    showToast("Daily snatch order quota reached.");
+    return;
+  }
+
+  const product =
+    specificProduct ||
+    state.products[Math.floor(Math.random() * state.products.length)] ||
+    DEFAULT_PRODUCTS[0];
+
+  const newOrder = {
+    id: "ORD-" + Date.now(),
+    itemName: product.name,
+    price: Number(product.price || 100),
+    reward: Number(product.reward || 10),
+    status: "Confirmed",
+    userEmail: state.user.email || "guest@royalsunstone.local",
+    createdAt: new Date().toISOString()
+  };
+
+  state.user.quota = Math.max(0, Number(state.user.quota) - 1);
+  state.user.balance = Number(state.user.balance || 0) + Number(newOrder.reward);
+  state.orders.unshift(newOrder);
+
+  saveLocalState();
+  renderAllViews();
+  showToast(`Snatched "${newOrder.itemName}" (+$${newOrder.reward.toFixed(2)} reward)`);
+
+  try {
+    push(ref(db, "orders"), newOrder).catch(() => {});
+    if (state.user.uid && state.user.uid !== "guest") {
+      update(ref(db, `users/${state.user.uid}`), {
+        balance: state.user.balance,
+        quota: state.user.quota
+      }).catch(() => {});
+    }
+  } catch (_) {}
+}
+
+function openModal(title, htmlContent) {
+  const modal = document.getElementById("authModal");
+  const titleEl = document.getElementById("modalTitle");
+  const bodyEl = document.getElementById("modalContent");
+  if (!modal || !titleEl || !bodyEl) return;
+
+  titleEl.textContent = title;
+  bodyEl.innerHTML = htmlContent;
+  modal.classList.add("open");
+}
+
+function closeModal() {
+  const modal = document.getElementById("authModal");
+  if (modal) modal.classList.remove("open");
+}
+
+function openAccountModal() {
+  openModal(
+    "Account Details",
+    `
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:14px;">
+        <div><strong>Member:</strong> ${escapeHtml(state.user.name)}</div>
+        <div><strong>Email:</strong> ${escapeHtml(state.user.email || "Not signed in")}</div>
+        <div><strong>Balance:</strong> $${Number(state.user.balance).toFixed(2)}</div>
+        <div><strong>Remaining Snatch Quota:</strong> ${state.user.quota}</div>
+        <div><strong>Total Orders:</strong> ${state.orders.length}</div>
+      </div>
+    `
+  );
+}
+
+function openAuthModal() {
+  if (state.user.loggedIn) {
+    signOut(auth)
+      .then(() => {
+        state.user.loggedIn = false;
+        state.user.email = "";
+        state.user.uid = "guest";
+        saveLocalState();
+        renderHeroStats();
+        showToast("Signed out successfully.");
+      })
+      .catch(() => {
+        state.user.loggedIn = false;
+        saveLocalState();
+        renderHeroStats();
+      });
+    return;
+  }
+
+  openModal(
+    "Login or Register",
+    `
+      <form id="authForm">
+        <div class="form-group">
+          <label for="authEmail">Email Address</label>
+          <input type="email" id="authEmail" class="input" required placeholder="member@example.com" />
+        </div>
+        <div class="form-group">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" class="input" required minlength="6" placeholder="At least 6 characters" />
+        </div>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button type="submit" class="btn btn-navy" style="flex:1; justify-content:center;">Sign In</button>
+          <button type="button" id="registerBtn" class="btn btn-gold" style="flex:1; justify-content:center;">Register</button>
+        </div>
+      </form>
+    `
+  );
+
+  const form = document.getElementById("authForm");
+  const regBtn = document.getElementById("registerBtn");
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("authEmail").value.trim();
+    const pass = document.getElementById("authPassword").value;
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      state.user.loggedIn = true;
+      state.user.email = cred.user.email || email;
+      state.user.uid = cred.user.uid;
+      state.user.name = (cred.user.email || email).split("@")[0];
+      saveLocalState();
+      renderHeroStats();
+      closeModal();
+      showToast("Signed in to Royal Sunstone Jewels.");
+    } catch (err) {
+      showToast(err.message || "Sign in failed.");
+    }
   });
 
-  // Sync 100 orders from Firebase
-  onValue(ref(db, "orders100"), (snapshot) => {
-    const val = snapshot.val();
-    if (Array.isArray(val) && val.length === 100) {
-      orders100 = val;
-      persistState();
-      renderCurrentOrderCard();
-    } else if (val && typeof val === "object") {
-      const arr = Object.values(val).filter(Boolean);
-      if (arr.length === 100) {
-        orders100 = arr.sort((a, b) => a.orderNo - b.orderNo);
-        persistState();
-        renderCurrentOrderCard();
-      }
+  regBtn?.addEventListener("click", async () => {
+    const email = document.getElementById("authEmail").value.trim();
+    const pass = document.getElementById("authPassword").value;
+    if (!email || pass.length < 6) {
+      showToast("Enter a valid email and 6+ character password.");
+      return;
     }
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      state.user.loggedIn = true;
+      state.user.email = cred.user.email || email;
+      state.user.uid = cred.user.uid;
+      state.user.name = (cred.user.email || email).split("@")[0];
+      await set(ref(db, `users/${cred.user.uid}`), {
+        email: state.user.email,
+        balance: state.user.balance,
+        quota: state.user.quota
+      }).catch(() => {});
+      saveLocalState();
+      renderHeroStats();
+      closeModal();
+      showToast("Account created and signed in.");
+    } catch (err) {
+      showToast(err.message || "Registration failed.");
+    }
+  });
+}
+
+function bindUIEvents() {
+  if (bindUIEvents._bound) return;
+  bindUIEvents._bound = true;
+
+  loadLocalState();
+
+  const drawer = document.getElementById("sideDrawer");
+  const backdrop = document.getElementById("drawerBackdrop");
+  const openDrawer = () => {
+    drawer?.classList.add("open");
+    backdrop?.classList.add("open");
+  };
+  const closeDrawer = () => {
+    drawer?.classList.remove("open");
+    backdrop?.classList.remove("open");
+  };
+
+  document.getElementById("menuToggleBtn")?.addEventListener("click", openDrawer);
+  document.getElementById("closeDrawerBtn")?.addEventListener("click", closeDrawer);
+  backdrop?.addEventListener("click", closeDrawer);
+
+  document.getElementById("brandHomeBtn")?.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  document.querySelectorAll("[data-scroll]").forEach((el) => {
+    el.addEventListener("click", () => {
+      closeDrawer();
+      const target = document.getElementById(el.dataset.scroll);
+      target?.scrollIntoView({ behavior: "smooth" });
+    });
+  });
+
+  document.querySelectorAll("#categoryFilters .filter-pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      document.querySelectorAll("#categoryFilters .filter-pill").forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      state.selectedCategory = pill.dataset.cat || "All";
+      renderProducts();
+    });
+  });
+
+  document.getElementById("headerSnatchBtn")?.addEventListener("click", () => handleSnatchOrder());
+  document.getElementById("heroSnatchBtn")?.addEventListener("click", () => handleSnatchOrder());
+  document.getElementById("panelSnatchBtn")?.addEventListener("click", () => handleSnatchOrder());
+  document.getElementById("accountDetailsBtn")?.addEventListener("click", openAccountModal);
+  document.getElementById("authActionBtn")?.addEventListener("click", openAuthModal);
+  document.getElementById("closeModalBtn")?.addEventListener("click", closeModal);
+  document.getElementById("authModal")?.addEventListener("click", (e) => {
+    if (e.target.id === "authModal") closeModal();
+  });
+
+  document.getElementById("chatForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = document.getElementById("chatInput");
+    const text = input?.value.trim();
+    if (!text) return;
+
+    const msg = {
+      id: "msg-" + Date.now(),
+      sender: state.user.email || "member",
+      text,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    };
+
+    state.messages.push(msg);
+    input.value = "";
+    saveLocalState();
+    renderMessages();
+
+    push(ref(db, "messages"), msg).catch(() => {});
   });
 }
 
 export function renderAllViews() {
-  persistState();
-  applySiteImagesToDom();
-
-  const user = getActiveUser();
-  const uid = localStorage.getItem(CURRENT_UID_KEY);
-  const users = getUsers();
-  const totalWallet = Number((walletState.availableBalance + walletState.dailyProfit).toFixed(2));
-
-  const headerAuthBtn = document.getElementById("headerAuthBtn");
-  if (headerAuthBtn) {
-    headerAuthBtn.textContent = (uid && users[uid]) ? `${user.username} (UID:${user.uid})` : "Login / Register";
-  }
-
-  const dashUsername = document.getElementById("dashUsername");
-  const dashUid = document.getElementById("dashUid");
-  if (dashUsername) dashUsername.textContent = user.username;
-  if (dashUid) dashUid.textContent = `UID:${user.uid}`;
-
-  const detAvailable = document.getElementById("detAvailable");
-  const detProfit = document.getElementById("detProfit");
-  const detOutOfFunds = document.getElementById("detOutOfFunds");
-  const detOrderProgress = document.getElementById("detOrderProgress");
-  const detTestCredit = document.getElementById("detTestCredit");
-
-  if (detAvailable) detAvailable.textContent = walletState.availableBalance.toFixed(2);
-  if (detProfit) detProfit.textContent = walletState.dailyProfit.toFixed(2);
-  if (detOutOfFunds) detOutOfFunds.textContent = walletState.outOfFunds.toFixed(2);
-  if (detOrderProgress) detOrderProgress.textContent = `${walletState.completedOrders} / 100`;
-  if (detTestCredit) detTestCredit.textContent = walletState.testCredit.toLocaleString("en-US", { minimumFractionDigits: 2 });
-
-  const payoutWalletFunds = document.getElementById("payoutWalletFunds");
-  const payoutMethodLabel = document.getElementById("payoutMethodLabel");
-  const payoutNumberLabel = document.getElementById("payoutNumberLabel");
-  if (payoutWalletFunds) payoutWalletFunds.textContent = totalWallet.toFixed(2);
-  if (payoutMethodLabel) payoutMethodLabel.textContent = walletState.boundMethod || "bKash";
-  if (payoutNumberLabel) payoutNumberLabel.textContent = walletState.boundNumber || "45643";
-
-  const currentDispNo = walletState.completedOrders >= 100 ? 100 : walletState.completedOrders + 1;
-  const snatchCounterText = document.getElementById("snatchCounterText");
-  const snatchAvailText = document.getElementById("snatchAvailText");
-  const snatchProfitText = document.getElementById("snatchProfitText");
-
-  if (snatchCounterText) snatchCounterText.textContent = `${currentDispNo} / 100`;
-  if (snatchAvailText) snatchAvailText.textContent = walletState.availableBalance.toFixed(2);
-  if (snatchProfitText) snatchProfitText.textContent = walletState.dailyProfit.toFixed(2);
-
-  renderCurrentOrderCard();
-}
-
-export function renderCurrentOrderCard() {
-  const card = document.getElementById("snatchOrderCard");
-  if (!card) return;
-
-  if (walletState.completedOrders >= 100) {
-    card.innerHTML = `
-      <div class="order-badge">Completed (100 / 100)</div>
-      <div class="order-title">All 100 Orders Confirmed</div>
-      <p style="font-size:13px; color:#444; margin-bottom:14px;">
-        Total Discount Profit Earned: <strong>৳${walletState.dailyProfit.toFixed(2)}</strong>
-      </p>
-      <button type="button" class="btn-primary" onclick="closeSnatchPanel(); openPayOutPanel();">Go to Pay Out</button>
-    `;
-    return;
-  }
-
-  const idx = walletState.completedOrders;
-  const item = orders100[idx];
-  const imgSrc = resolveImagePath(item.image, idx);
-  const fallbackSrc = FALLBACK_IMAGES[idx % FALLBACK_IMAGES.length];
-  const canAfford = walletState.availableBalance >= item.price;
-
-  let customEditorMarkup = "";
-  if (!item.isAuto) {
-    customEditorMarkup = `
-      <div class="custom-editor-box">
-        <h4>Customize Order #${item.orderNo} (Name, Image, Price, Discount)</h4>
-        <input type="text" id="editName_${item.orderNo}" class="edit-input" value="${item.name}" placeholder="Product Name" />
-        <input type="text" id="editImg_${item.orderNo}" class="edit-input" value="${item.image}" placeholder="Image file name (e.g. ring26.jpg)" />
-        <div class="edit-grid">
-          <input type="number" step="0.01" id="editPrice_${item.orderNo}" class="edit-input" value="${item.price}" placeholder="Price" />
-          <input type="number" step="0.01" id="editDiscount_${item.orderNo}" class="edit-input" value="${item.discount}" placeholder="Discount" />
-        </div>
-        <button type="button" class="btn-save-item" onclick="saveCustomOrder(${item.orderNo})">Save Order #${item.orderNo}</button>
-      </div>
-    `;
-  }
-
-  card.innerHTML = `
-    <div class="order-badge">Order ${item.orderNo} of 100 (${item.isAuto ? "Auto 1-25" : "Custom 26-100"})</div>
-    <img src="${imgSrc}" alt="${item.name}" class="order-img" onerror="this.onerror=null; this.src='${fallbackSrc}';" />
-    <div class="order-title">${item.name}</div>
-    <div class="order-calc">
-      <div><span>Order Price:</span><strong>৳${Number(item.price).toFixed(2)}</strong></div>
-      <div><span>Order Discount (Profit):</span><span class="discount-highlight">+৳${Number(item.discount).toFixed(2)}</span></div>
-    </div>
-    <button type="button" class="btn-primary" onclick="confirmOrder(${item.orderNo})" ${!canAfford ? "disabled" : ""}>
-      ${canAfford ? `Confirm Order (${item.orderNo}/100)` : `Insufficient Balance (৳${Number(item.price).toFixed(2)})`}
-    </button>
-    ${customEditorMarkup}
-  `;
-}
-
-export function saveCustomOrder(orderNo) {
-  const idx = orderNo - 1;
-  if (!orders100[idx]) return;
-
-  const nameVal = document.getElementById(`editName_${orderNo}`)?.value.trim();
-  const imgVal = document.getElementById(`editImg_${orderNo}`)?.value.trim();
-  const priceVal = parseFloat(document.getElementById(`editPrice_${orderNo}`)?.value);
-  const discVal = parseFloat(document.getElementById(`editDiscount_${orderNo}`)?.value);
-
-  if (nameVal) orders100[idx].name = nameVal;
-  if (imgVal) orders100[idx].image = imgVal;
-  if (!isNaN(priceVal) && priceVal >= 0) orders100[idx].price = Number(priceVal.toFixed(2));
-  if (!isNaN(discVal) && discVal >= 0) orders100[idx].discount = Number(discVal.toFixed(2));
-
-  renderAllViews();
-}
-
-export function confirmOrder(orderNo) {
-  if (walletState.completedOrders !== orderNo - 1 || walletState.completedOrders >= 100) return;
-  const item = orders100[walletState.completedOrders];
-  if (walletState.availableBalance < item.price) return;
-
-  walletState.availableBalance = Number((walletState.availableBalance - item.price).toFixed(2));
-  walletState.dailyProfit = Number((walletState.dailyProfit + item.discount).toFixed(2));
-  walletState.completedOrders += 1;
-
-  renderAllViews();
-}
-
-export function submitPayOut() {
-  const totalWallet = Number((walletState.availableBalance + walletState.dailyProfit).toFixed(2));
-  const inputEl = document.getElementById("payoutAmountInput");
-  const amt = parseFloat(inputEl?.value);
-
-  if (isNaN(amt) || amt <= 0) return;
-  if (amt < 500) return alert("Minimum Pay Out ৳500");
-  if (amt > totalWallet) return alert("Insufficient Wallet Funds");
-
-  let rem = amt;
-  if (walletState.dailyProfit >= rem) {
-    walletState.dailyProfit = Number((walletState.dailyProfit - rem).toFixed(2));
-  } else {
-    rem = Number((rem - walletState.dailyProfit).toFixed(2));
-    walletState.dailyProfit = 0;
-    walletState.availableBalance = Number((walletState.availableBalance - rem).toFixed(2));
-  }
-
-  walletState.outOfFunds = Number((walletState.outOfFunds + amt).toFixed(2));
-  if (inputEl) inputEl.value = "";
-  renderAllViews();
-  alert("Pay Out request submitted.");
-}
-
-export function submitBindRequest(e) {
-  e.preventDefault();
-  const user = getActiveUser();
-  const customerName = document.getElementById("bindName")?.value.trim();
-  const customerNumber = document.getElementById("bindNumber")?.value.trim();
-  const method = document.getElementById("bindMethod")?.value;
-
-  if (!customerName || !customerNumber || !method) return;
-
-  walletState.boundMethod = method;
-  walletState.boundNumber = customerNumber;
-  renderAllViews();
-
-  set(ref(db, `bindRequests/${user.uid}`), {
-    uid: user.uid,
-    customerName,
-    customerNumber,
-    method,
-    status: "waiting",
-    shopNumber: "",
-    transactionType: "",
-    updatedAt: Date.now()
-  });
-
-  listenBindStatus(user.uid);
-}
-
-export function listenBindStatus(uid) {
-  onValue(ref(db, `bindRequests/${uid}`), (snapshot) => {
-    const data = snapshot.val();
-    const card = document.getElementById("bindStatusCard");
-    const badgeArea = document.getElementById("statusBadgeArea");
-    const instText = document.getElementById("statusInstructionText");
-    const shopBox = document.getElementById("shopNumberBox");
-
-    if (!card) return;
-    if (!data) {
-      card.style.display = "none";
-      return;
-    }
-
-    card.style.display = "block";
-    if (data.shopNumber && data.shopNumber.trim() !== "") {
-      badgeArea.innerHTML = `<span class="badge-ready">Shop Details Ready</span>`;
-      instText.textContent = "Please use the shop payment details below:";
-      shopBox.style.display = "block";
-      document.getElementById("resMethod").textContent = data.method;
-      document.getElementById("resShopNumber").textContent = data.shopNumber;
-      document.getElementById("resTxType").textContent = data.transactionType || "Send Money";
-    } else {
-      badgeArea.innerHTML = `<span class="badge-wait">Please wait</span>`;
-      instText.textContent = "Your request is confirmed. Please wait while admin assigns the shop number and transaction type.";
-      shopBox.style.display = "none";
-    }
-  });
-}
-
-export function sendCustomerMessage(e) {
-  e.preventDefault();
-  const input = document.getElementById("msgInput");
-  const text = input?.value.trim();
-  if (!text) return;
-
-  const user = getActiveUser();
-  const sessionId = "cust_" + user.uid;
-
-  set(push(ref(db, `chats/${sessionId}/messages`)), {
-    sender: "customer",
-    text,
-    timestamp: Date.now()
-  });
-
-  update(ref(db, `chats/${sessionId}/meta`), {
-    name: `${user.username} (UID:${user.uid})`,
-    lastMessage: text,
-    unreadByAdmin: true
-  });
-
-  input.value = "";
+  bindUIEvents();
+  renderHeroStats();
+  renderProducts();
+  renderOrders();
+  renderMessages();
 }
 
 export function initChatListener() {
-  const user = getActiveUser();
-  onValue(ref(db, `chats/cust_${user.uid}/messages`), (snapshot) => {
-    const box = document.getElementById("chatMessages");
-    if (!box) return;
-    box.innerHTML = "";
-    const data = snapshot.val();
-    if (!data) {
-      box.innerHTML = `<div class="msg admin">Welcome to ROYAL SUNSTONE — JEWELS.</div>`;
-      return;
-    }
-    Object.values(data).forEach((m) => {
-      const div = document.createElement("div");
-      div.className = "msg " + (m.sender === "admin" ? "admin" : "customer");
-      div.textContent = m.text;
-      box.appendChild(div);
+  try {
+    onValue(
+      ref(db, "messages"),
+      (snapshot) => {
+        if (!snapshot.exists()) return;
+        const val = snapshot.val();
+        const list = Object.values(val);
+        if (list.length > 0) {
+          state.messages = list;
+          saveLocalState();
+          renderMessages();
+        }
+      },
+      () => {}
+    );
+  } catch (_) {}
+}
+
+export function initFirebaseSync() {
+  const statusEl = document.getElementById("syncStatusText");
+
+  try {
+    onValue(
+      ref(db, "products"),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const raw = snapshot.val();
+          const list = Array.isArray(raw)
+            ? raw.filter(Boolean)
+            : Object.entries(raw).map(([key, item]) => ({ id: key, ...item }));
+          if (list.length > 0) {
+            state.products = list;
+            saveLocalState();
+            renderProducts();
+          }
+        }
+        if (statusEl) statusEl.textContent = "Live catalog synced";
+      },
+      () => {
+        if (statusEl) statusEl.textContent = "Local catalog active";
+      }
+    );
+
+    onValue(
+      ref(db, "orders"),
+      (snapshot) => {
+        if (!snapshot.exists()) return;
+        const raw = snapshot.val();
+        const list = Object.values(raw).reverse();
+        if (list.length > 0) {
+          state.orders = list;
+          saveLocalState();
+          renderOrders();
+          renderHeroStats();
+        }
+      },
+      () => {}
+    );
+
+    onAuthStateChanged(auth, (fbUser) => {
+      if (fbUser) {
+        state.user.loggedIn = true;
+        state.user.email = fbUser.email || "";
+        state.user.uid = fbUser.uid;
+        state.user.name = (fbUser.email || "Member").split("@")[0];
+      } else {
+        state.user.loggedIn = false;
+        state.user.uid = "guest";
+      }
+      saveLocalState();
+      renderHeroStats();
     });
-    box.scrollTop = box.scrollHeight;
-  });
+  } catch (_) {
+    if (statusEl) statusEl.textContent = "Local catalog active";
+  }
 }
-
-export function submitRegister(e) {
-  e.preventDefault();
-  const username = document.getElementById("regUsername")?.value.trim();
-  const email = document.getElementById("regEmail")?.value.trim().toLowerCase();
-  const password = document.getElementById("regPassword")?.value;
-  if (!username || !email || !password) return;
-
-  const uid = String(Math.floor(1000000 + Math.random() * 9000000));
-  const users = getUsers();
-  users[uid] = { uid, username, email, password };
-  saveUsers(users);
-  localStorage.setItem(CURRENT_UID_KEY, uid);
-
-  document.getElementById("authModal")?.classList.remove("open");
-  renderAllViews();
-  initChatListener();
-  document.getElementById("profilePanel")?.classList.add("open");
-}
-
-export function submitLogin(e) {
-  e.preventDefault();
-  const identifier = document.getElementById("loginIdentifier")?.value.trim().toLowerCase();
-  const password = document.getElementById("loginPassword")?.value;
-  const found = Object.values(getUsers()).find(
-    (u) => (u.email === identifier || u.username.toLowerCase() === identifier) && u.password === password
-  );
-  if (!found) return alert("Invalid credentials.");
-
-  localStorage.setItem(CURRENT_UID_KEY, found.uid);
-  document.getElementById("authModal")?.classList.remove("open");
-  renderAllViews();
-  initChatListener();
-  document.getElementById("profilePanel")?.classList.add("open");
-}
-
-export function signOutUser() {
-  localStorage.removeItem(CURRENT_UID_KEY);
-  renderAllViews();
-  initChatListener();
-  document.getElementById("profilePanel")?.classList.remove("open");
-}
-
-window.confirmOrder = confirmOrder;
-window.saveCustomOrder = saveCustomOrder;
-window.submitPayOut = submitPayOut;
-window.submitBindRequest = submitBindRequest;
-window.sendCustomerMessage = sendCustomerMessage;
-window.submitRegister = submitRegister;
-window.submitLogin = submitLogin;
-window.signOutUser = signOutUser;
-window.renderAllViews = renderAllViews;
-window.listenBindStatus = listenBindStatus;
-window.getActiveUser = getActiveUser;
