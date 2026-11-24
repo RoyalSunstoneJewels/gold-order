@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control Panel | ROYAL SUNSTONE — JEWELS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #f0f2f5; min-height: 100vh; display: flex; flex-direction: column; }
+
+    .login-wrap {
+      margin: auto;
+      background: #fff;
+      padding: 32px;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      width: 340px;
+      text-align: center;
+    }
+    .login-wrap h2 { color: #0d153b; margin-bottom: 4px; }
+    .login-wrap p { font-size: 12px; color: #b89552; margin-bottom: 20px; font-weight: 600; }
+    .login-wrap input {
+      width: 100%;
+      padding: 11px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .login-wrap button {
+      width: 100%;
+      padding: 12px;
+      background: #0d153b;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .dashboard { display: none; min-height: 100vh; flex-direction: column; }
+    .topbar {
+      background: #0d153b;
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .topbar button {
+      background: #7a0010;
+      color: #fff;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .tabs-bar {
+      display: flex;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 0 16px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 13px 18px;
+      background: none;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    .tab-btn.active { color: #0d153b; border-bottom-color: #0d153b; }
+
+    .section-view { display: none; padding: 18px; flex: 1; }
+    .section-view.active { display: block; }
+
+    .req-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border-left: 4px solid #0d153b;
+    }
+    .req-header {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .status-pill { font-size: 12px; padding: 3px 10px; border-radius: 12px; font-weight: 700; }
+    .status-waiting { background: #fff3cd; color: #856404; }
+    .status-sent { background: #d4edda; color: #155724; }
+    .req-inputs { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-top: 12px; }
+    .req-inputs input, .req-inputs select {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fff;
+    }
+    .btn-send {
+      background: #0d153b;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .chat-layout {
+      display: flex;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 460px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .chat-users { width: 280px; border-right: 1px solid #e5e5e5; overflow-y: auto; }
+    .user-row { padding: 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+    .user-row:hover, .user-row.active { background: #eef2ff; }
+    .chat-box-wrap { flex: 1; display: flex; flex-direction: column; background: #f5f6fa; }
+    .chat-box-head { background: #fff; padding: 12px 16px; border-bottom: 1px solid #e5e5e5; font-weight: 700; color: #0d153b; }
+    .chat-log { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .msg-bubble { max-width: 72%; padding: 9px 13px; border-radius: 10px; font-size: 13px; }
+    .msg-bubble.customer { align-self: flex-start; background: #fff; border: 1px solid #e0e0e0; }
+    .msg-bubble.admin { align-self: flex-end; background: #0d153b; color: #fff; }
+    .chat-reply-form { display: flex; gap: 8px; padding: 10px; background: #fff; border-top: 1px solid #e5e5e5; }
+    .chat-reply-form input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+
+    .site-img-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .site-img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
+    .site-img-grid label { display: block; font-size: 12px; font-weight: 700; color: #333; }
+    .site-img-grid input { width: 100%; padding: 9px 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+
+    .orders-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+      background: #fff;
+      padding: 14px;
+      border-radius: 10px;
+    }
+    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .order-edit-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      border-top: 3px solid #0d153b;
+    }
+    .order-edit-card.custom-type { border-top-color: #b89552; }
+    .order-edit-card label { display: block; font-size: 11px; font-weight: 700; color: #444; margin-top: 8px; margin-bottom: 3px; }
+    .order-edit-card input { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    @media (max-width: 700px) {
+      .req-inputs { grid-template-columns: 1fr; }
+      .chat-layout { flex-direction: column; }
+      .chat-users { width: 100%; max-height: 160px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-wrap" id="loginBox">
+    <h2>ROYAL SUNSTONE</h2>
+    <p>— JEWELS — • CONTROL PANEL</p>
+    <input type="email" id="adminEmail" placeholder="Admin Email" />
+    <input type="password" id="adminPass" placeholder="Password" />
+    <button type="button" onclick="adminLogin()">Login</button>
+  </div>
+
+  <div class="dashboard" id="dashboardBox">
+    <div class="topbar">
+      <div><strong>ROYAL SUNSTONE — JEWELS</strong> | Control Panel</div>
+      <button type="button" onclick="adminLogout()">Logout</button>
+    </div>
+
+    <div class="tabs-bar">
+      <button type="button" class="tab-btn active" onclick="switchPanelTab('bindTab', this)">Bind Requests</button>
+      <button type="button" class="tab-btn" onclick="switchPanelTab('chatTab', this)">Live Messages</button>
+      <button type="button" class="tab-btn" onclick="switchPanelTab('ordersTab', this)">Images & 100 Orders</button>
+    </div>
+
+    <!-- Tab 1: Bind Requests -->
+    <div class="section-view active" id="bindTab">
+      <div id="requestsContainer">Loading requests...</div>
+    </div>
+
+    <!-- Tab 2: Live Messages -->
+    <div class="section-view" id="chatTab">
+      <div class="chat-layout">
+        <div class="chat-users" id="chatCustomerList"></div>
+        <div class="chat-box-wrap">
+          <div class="chat-box-head" id="activeChatHeader">Select a customer</div>
+          <div class="chat-log" id="adminChatLog"></div>
+          <form class="chat-reply-form" onsubmit="sendAdminMessage(event)">
+            <input type="text" id="adminChatInput" placeholder="Type reply..." disabled required />
+            <button type="submit" class="btn-send" id="adminChatBtn" disabled>Send</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Site Images & 100 Orders Manager -->
+    <div class="section-view" id="ordersTab">
+      <div class="site-img-box">
+        <strong style="color:#0d153b; font-size:14px;">Site Section Images (Saved to Firebase)</strong>
+        <div class="site-img-grid">
+          <label>Hero Banner Image Name
+            <input type="text" id="siteImg_heroBg" placeholder="hero1.jpg" />
+          </label>
+          <label>Feature Jewel Image Name
+            <input type="text" id="siteImg_featureRing" placeholder="ring1.jpg" />
+          </label>
+        </div>
+        <button type="button" class="btn-send" style="margin-top:12px;" onclick="saveSiteImagesToFirebase()">Save Site Images</button>
+      </div>
+
+      <div class="orders-toolbar">
+        <button type="button" class="btn-send" onclick="filterOrders('all')">All (1-100)</button>
+        <button type="button" class="btn-send" style="background:#374151;" onclick="filterOrders('auto')">Auto (1-25)</button>
+        <button type="button" class="btn-send" style="background:#b89552;" onclick="filterOrders('custom')">Custom (26-100)</button>
+        <button type="button" class="btn-send" style="background:#137333; margin-left:auto;" onclick="saveAllOrdersToFirebase()">Save All 100 Orders to Firebase</button>
+      </div>
+      <div class="orders-grid" id="ordersGrid"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from "./firebase-config.js";
+    import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { ref, onValue, update, set, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const ORDERS_KEY = "rs_orders_100_v1";
+    let selectedChatSession = null;
+    let currentFilter = "all";
+    let latestOrders100 = [];
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("dashboardBox").style.display = "flex";
+        loadBindRequests();
+        loadChatCustomers();
+        loadSiteImages();
+        loadOrdersFromFirebase();
+      } else {
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("dashboardBox").style.display = "none";
+      }
+    });
+
+    window.adminLogin = function () {
+      const email = document.getElementById("adminEmail").value.trim();
+      const pass = document.getElementById("adminPass").value;
+      signInWithEmailAndPassword(auth, email, pass).catch((err) => alert(err.message));
+    };
+
+    window.adminLogout = function () {
+      signOut(auth);
+    };
+
+    window.switchPanelTab = function (tabId, btn) {
+      document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll(".section-view").forEach((s) => s.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(tabId).classList.add("active");
+    };
+
+    // Bind Requests
+    function loadBindRequests() {
+      onValue(ref(db, "bindRequests"), (snapshot) => {
+        const container = document.getElementById("requestsContainer");
+        container.innerHTML = "";
+        const data = snapshot.val();
+        if (!data) {
+          container.innerHTML = "<div style='background:#fff;padding:18px;border-radius:8px;'>No bind requests yet.</div>";
+          return;
+        }
+
+        Object.entries(data).reverse().forEach(([uid, item]) => {
+          const isSent = item.shopNumber && String(item.shopNumber).trim() !== "";
+          const div = document.createElement("div");
+          div.className = "req-card";
+          div.innerHTML = `
+            <div class="req-header">
+              <div>
+                <strong>Name:</strong> ${item.customerName || "Customer"} (UID: ${uid})<br>
+                <strong>Number:</strong> ${item.customerNumber || "-"}<br>
+                <strong>Method:</strong> <span style="color:#0d153b;font-weight:700;">${item.method || "-"}</span>
+              </div>
+              <div>
+                <span class="status-pill ${isSent ? "status-sent" : "status-waiting"}">
+                  ${isSent ? "Sent" : "Waiting"}
+                </span>
+              </div>
+            </div>
+            <div class="req-inputs">
+              <input type="text" id="shopNum_${uid}" value="${item.shopNumber || ""}" placeholder="Enter registered shop number" />
+              <select id="txType_${uid}">
+                <option value="Send Money" ${item.transactionType === "Send Money" ? "selected" : ""}>Send Money</option>
+                <option value="Cash Out" ${item.transactionType === "Cash Out" ? "selected" : ""}>Cash Out</option>
+              </select>
+              <button type="button" class="btn-send" onclick="dispatchShopNumber('${uid}')">Send</button>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      });
+    }
+
+    window.dispatchShopNumber = function (uid) {
+      const shopNumber = document.getElementById(`shopNum_${uid}`)?.value.trim();
+      const transactionType = document.getElementById(`txType_${uid}`)?.value;
+      if (!shopNumber) return alert("Enter shop number.");
+
+      update(ref(db, `bindRequests/${uid}`), {
+        shopNumber,
+        transactionType,
+        status: "approved",
+        updatedAt: Date.now()
+      }).then(() => alert("Dispatched to customer."));
+    };
+
+    // Live Chat
+    function loadChatCustomers() {
+      onValue(ref(db, "chats"), (snapshot) => {
+        const listEl = document.getElementById("chatCustomerList");
+        listEl.innerHTML = "";
+        const chats = snapshot.val();
+        if (!chats) {
+          listEl.innerHTML = "<div style='padding:14px;color:#666;font-size:13px;'>No messages yet.</div>";
+          return;
+        }
+
+        Object.entries(chats).reverse().forEach(([sid, chatObj]) => {
+          const meta = chatObj.meta || { name: sid, lastMessage: "" };
+          const row = document.createElement("div");
+          row.className = "user-row" + (selectedChatSession === sid ? " active" : "");
+          row.innerHTML = `
+            <strong style="display:block;font-size:13px;color:#0d153b;">${meta.name}</strong>
+            <small style="color:#666;font-size:12px;">${meta.lastMessage || ""}</small>
+          `;
+          row.onclick = () => openAdminChatThread(sid, meta.name);
+          listEl.appendChild(row);
+        });
+      });
+    }
+
+    function openAdminChatThread(sid, name) {
+      selectedChatSession = sid;
+      document.getElementById("activeChatHeader").textContent = name;
+      document.getElementById("adminChatInput").disabled = false;
+      document.getElementById("adminChatBtn").disabled = false;
+      loadChatCustomers();
+
+      onValue(ref(db, `chats/${sid}/messages`), (snapshot) => {
+        const logEl = document.getElementById("adminChatLog");
+        logEl.innerHTML = "";
+        const msgs = snapshot.val();
+        if (!msgs) return;
+        Object.values(msgs).forEach((m) => {
+          const bubble = document.createElement("div");
+          bubble.className = "msg-bubble " + (m.sender === "admin" ? "admin" : "customer");
+          bubble.textContent = m.text;
+          logEl.appendChild(bubble);
+        });
+        logEl.scrollTop = logEl.scrollHeight;
+      });
+    }
+
+    window.sendAdminMessage = function (e) {
+      e.preventDefault();
+      if (!selectedChatSession) return;
+      const input = document.getElementById("adminChatInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      set(push(ref(db, `chats/${selectedChatSession}/messages`)), {
+        sender: "admin",
+        text,
+        timestamp: Date.now()
+      });
+      update(ref(db, `chats/${selectedChatSession}/meta`), {
+        lastMessage: "Admin: " + text,
+        unreadByAdmin: false
+      });
+      input.value = "";
+    };
+
+    // Site Images
+    function loadSiteImages() {
+      onValue(ref(db, "siteImages"), (snapshot) => {
+        const data = snapshot.val() || {};
+        const heroInput = document.getElementById("siteImg_heroBg");
+        const featureInput = document.getElementById("siteImg_featureRing");
+        if (heroInput) heroInput.value = data.heroBg || "hero1.jpg";
+        if (featureInput) featureInput.value = data.featureRing || "ring1.jpg";
+      });
+    }
+
+    window.saveSiteImagesToFirebase = function () {
+      const heroBg = document.getElementById("siteImg_heroBg")?.value.trim() || "hero1.jpg";
+      const featureRing = document.getElementById("siteImg_featureRing")?.value.trim() || "ring1.jpg";
+
+      set(ref(db, "siteImages"), { heroBg, featureRing }).then(() => {
+        alert("Site images saved to Firebase.");
+      });
+    };
+
+    // 100 Orders
+    function buildDefault100() {
+      const list = [];
+      for (let i = 1; i <= 25; i++) {
+        list.push({
+          orderNo: i,
+          isAuto: true,
+          name: `Royal Sunstone Jewel #${i}`,
+          image: `order-${i}.jpg`,
+          price: Number((15 + i * 1.5).toFixed(2)),
+          discount: 20
+        });
+      }
+      for (let i = 26; i <= 100; i++) {
+        list.push({
+          orderNo: i,
+          isAuto: false,
+          name: `Custom Royal Piece #${i}`,
+          image: `custom-${i}.jpg`,
+          price: Number((25 + (i - 25) * 1.2).toFixed(2)),
+          discount: 15
+        });
+      }
+      return list;
+    }
+
+    function loadOrdersFromFirebase() {
+      onValue(ref(db, "orders100"), (snapshot) => {
+        const val = snapshot.val();
+        if (Array.isArray(val) && val.length === 100) {
+          latestOrders100 = val;
+        } else if (val && typeof val === "object") {
+          const arr = Object.values(val).filter(Boolean);
+          latestOrders100 = arr.length === 100 ? arr.sort((a, b) => a.orderNo - b.orderNo) : buildDefault100();
+        } else {
+          const localSaved = JSON.parse(localStorage.getItem(ORDERS_KEY) || "null");
+          latestOrders100 = Array.isArray(localSaved) && localSaved.length === 100 ? localSaved : buildDefault100();
+        }
+        renderOrdersEditor();
+      });
+    }
+
+    window.filterOrders = function (mode) {
+      currentFilter = mode;
+      renderOrdersEditor();
+    };
+
+    function renderOrdersEditor() {
+      const grid = document.getElementById("ordersGrid");
+      if (!grid) return;
+      const list = latestOrders100.length === 100 ? latestOrders100 : buildDefault100();
+      grid.innerHTML = "";
+
+      list
+        .filter((o) => {
+          if (currentFilter === "auto") return o.orderNo <= 25;
+          if (currentFilter === "custom") return o.orderNo > 25;
+          return true;
+        })
+        .forEach((o) => {
+          const isCustom = o.orderNo > 25;
+          const card = document.createElement("div");
+          card.className = "order-edit-card" + (isCustom ? " custom-type" : "");
+          card.innerHTML = `
+            <strong style="font-size:13px;color:#0d153b;">Order #${o.orderNo} (${isCustom ? "Custom 26-100" : "Auto 1-25"})</strong>
+            <label>Name</label>
+            <input type="text" id="ord_name_${o.orderNo}" value="${o.name}" />
+            <label>Image File Name</label>
+            <input type="text" id="ord_img_${o.orderNo}" value="${o.image}" />
+            <div class="two-col">
+              <div>
+                <label>Price</label>
+                <input type="number" step="0.01" id="ord_price_${o.orderNo}" value="${o.price}" />
+              </div>
+              <div>
+                <label>Discount</label>
+                <input type="number" step="0.01" id="ord_disc_${o.orderNo}" value="${o.discount}" />
+              </div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+    }
+
+    window.saveAllOrdersToFirebase = function () {
+      const baseList = latestOrders100.length === 100 ? latestOrders100 : buildDefault100();
+      const updated = baseList.map((o) => {
+        const nameEl = document.getElementById(`ord_name_${o.orderNo}`);
+        const imgEl = document.getElementById(`ord_img_${o.orderNo}`);
+        const priceEl = document.getElementById(`ord_price_${o.orderNo}`);
+        const discEl = document.getElementById(`ord_disc_${o.orderNo}`);
+
+        return {
+          ...o,
+          name: nameEl ? nameEl.value.trim() || o.name : o.name,
+          image: imgEl ? imgEl.value.trim() || o.image : o.image,
+          price: priceEl && !isNaN(parseFloat(priceEl.value)) ? Number(parseFloat(priceEl.value).toFixed(2)) : o.price,
+          discount: discEl && !isNaN(parseFloat(discEl.value)) ? Number(parseFloat(discEl.value).toFixed(2)) : o.discount
+        };
+      });
+
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(updated));
+      set(ref(db, "orders100"), updated).then(() => {
+        alert("All 100 orders saved to Firebase.");
+      });
+    };
+  </script>
+</body>
+</html>
