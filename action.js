@@ -6,6 +6,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const TOTAL_SNATCH_ITEMS = 25;
+const TOTAL_BATCH_PROFIT = 500;
+const PER_ORDER_REWARD = TOTAL_BATCH_PROFIT / TOTAL_SNATCH_ITEMS; // ৳20.00 per order
 
 const DEFAULT_PRODUCTS = [
   {
@@ -13,7 +15,7 @@ const DEFAULT_PRODUCTS = [
     name: "7 Three Prong Sunstone Tennis Bracelet In 14K White Gold",
     category: "Bracelets",
     price: 480,
-    reward: 18.5,
+    reward: PER_ORDER_REWARD,
     reviews: "2,507 Reviews",
     tag: "25% OFF*",
     image: "./images/bracelet-1.jpg",
@@ -24,7 +26,7 @@ const DEFAULT_PRODUCTS = [
     name: "Royal Sunstone Velvet Travel Case & Gift Set",
     category: "Necklaces",
     price: 320,
-    reward: 14.0,
+    reward: PER_ORDER_REWARD,
     reviews: "9,410 Reviews",
     tag: "OUR GIFT TO YOU",
     image: "./images/necklace-1.jpg",
@@ -35,7 +37,7 @@ const DEFAULT_PRODUCTS = [
     name: "Imperial Sunstone & Bezel Drop Earrings in 14K Yellow Gold",
     category: "Earrings",
     price: 540,
-    reward: 21.0,
+    reward: PER_ORDER_REWARD,
     reviews: "17,362 Reviews",
     tag: "NEW ARRIVAL",
     image: "./images/earrings-1.jpg",
@@ -46,7 +48,7 @@ const DEFAULT_PRODUCTS = [
     name: "Dot Dash Sunstone Solitaire Ring in 14k Yellow Gold",
     category: "Rings",
     price: 450,
-    reward: 17.5,
+    reward: PER_ORDER_REWARD,
     reviews: "11,348 Reviews",
     tag: "SIGNATURE",
     image: "./images/ring-1.jpg",
@@ -78,6 +80,11 @@ const EXCLUSIVE_SLIDES = [
   }
 ];
 
+function roundMoney(num) {
+  const n = Number(num || 0);
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
 function build25Queue(baseList) {
   const pool = Array.isArray(baseList) && baseList.length > 0 ? baseList : DEFAULT_PRODUCTS;
   const out = [];
@@ -89,7 +96,7 @@ function build25Queue(baseList) {
       name: i < pool.length ? src.name : `${src.name} — Edition #${i + 1}`,
       category: src.category || "Jewelry",
       price: Number(src.price || 450) + (i % 5) * 20,
-      reward: Number(src.reward || 15) + (i % 4) * 2.5,
+      reward: PER_ORDER_REWARD,
       reviews: src.reviews || `${(1400 + i * 310).toLocaleString()} Reviews`,
       image: src.image || "",
       description: src.description || "Royal Sunstone Jewels fine piece."
@@ -151,14 +158,17 @@ function saveLocal() {
       JSON.stringify({
         products: state.products,
         completedStep: state.completedStep,
-        dailyProfit: state.dailyProfit,
-        outOfFunds: state.outOfFunds,
-        testCredit: state.testCredit,
+        dailyProfit: roundMoney(state.dailyProfit),
+        outOfFunds: roundMoney(state.outOfFunds),
+        testCredit: roundMoney(state.testCredit),
         orders: state.orders,
         history: state.history,
         registeredAccounts: state.registeredAccounts,
         supportConfig: state.supportConfig,
-        session: state.session
+        session: {
+          ...state.session,
+          balance: roundMoney(state.session.balance)
+        }
       })
     );
   } catch (_) {}
@@ -173,10 +183,12 @@ function loadLocal() {
       state.products = p.products;
       state.queue25 = build25Queue(state.products);
     }
-    if (typeof p.completedStep === "number") state.completedStep = p.completedStep;
-    if (typeof p.dailyProfit === "number") state.dailyProfit = p.dailyProfit;
-    if (typeof p.outOfFunds === "number") state.outOfFunds = p.outOfFunds;
-    if (typeof p.testCredit === "number") state.testCredit = p.testCredit;
+    if (typeof p.completedStep === "number") {
+      state.completedStep = Math.max(0, Math.min(TOTAL_SNATCH_ITEMS, p.completedStep));
+    }
+    if (typeof p.dailyProfit === "number") state.dailyProfit = roundMoney(p.dailyProfit);
+    if (typeof p.outOfFunds === "number") state.outOfFunds = roundMoney(p.outOfFunds);
+    if (typeof p.testCredit === "number") state.testCredit = roundMoney(p.testCredit);
     if (Array.isArray(p.orders)) state.orders = p.orders;
     if (Array.isArray(p.history)) state.history = p.history;
     if (p.registeredAccounts && typeof p.registeredAccounts === "object") {
@@ -186,7 +198,11 @@ function loadLocal() {
       state.supportConfig = { ...state.supportConfig, ...p.supportConfig };
     }
     if (p.session && typeof p.session === "object") {
-      state.session = { ...state.session, ...p.session };
+      state.session = {
+        ...state.session,
+        ...p.session,
+        balance: roundMoney(p.session.balance ?? state.session.balance)
+      };
     }
   } catch (_) {}
 }
@@ -250,7 +266,7 @@ function switchToMainPage() {
 
 function renderTopAndDrawer() {
   const loggedIn = Boolean(state.session.loggedIn);
-  const bal = Number(state.session.balance || 0);
+  const bal = roundMoney(state.session.balance || 0);
 
   setText(
     "statusSummary",
@@ -359,7 +375,7 @@ function renderSnatchDedicatedPage() {
   if (!body) return;
 
   if (state.snatchSubMode === "payout") {
-    const bal = Number(state.session.balance || 0);
+    const bal = roundMoney(state.session.balance || 0);
     body.innerHTML = `
       <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">Snatch Orders &gt; Pay Out</div>
       <h1 style="font-size:28px; font-weight:800; margin-bottom:16px;">Pay Out</h1>
@@ -395,11 +411,11 @@ function renderSnatchDedicatedPage() {
     document.getElementById("backToQueueBtn")?.addEventListener("click", () => switchToSnatchPage("queue"));
     document.getElementById("pagePayOutForm")?.addEventListener("submit", (e) => {
       e.preventDefault();
-      const amt = Number(document.getElementById("pagePayOutAmt").value || 0);
+      const amt = roundMoney(document.getElementById("pagePayOutAmt").value || 0);
       if (amt < 500) return showToast("Minimum Pay Out is ৳500.");
-      if (amt > Number(state.session.balance || 0)) return showToast("Insufficient Wallet Funds.");
-      state.session.balance = Number(state.session.balance) - amt;
-      state.outOfFunds = Number(state.outOfFunds || 0) + amt;
+      if (amt > roundMoney(state.session.balance || 0)) return showToast("Insufficient Wallet Funds.");
+      state.session.balance = roundMoney(Number(state.session.balance) - amt);
+      state.outOfFunds = roundMoney(Number(state.outOfFunds || 0) + amt);
       addHistory(`Pay Out ৳${amt.toFixed(2)}`);
       saveLocal();
       renderTopAndDrawer();
@@ -477,7 +493,7 @@ function renderSnatchDedicatedPage() {
                 <div>
                   <div style="font-weight:700; font-size:14px; color:#111827;">${escapeHtml(item.name)}</div>
                   <div style="font-size:12px; color:#4b5563; margin-top:3px;">
-                    &#9733; ${escapeHtml(item.reviews)} &bull; $${Number(item.price).toFixed(2)}
+                    &#9733; ${escapeHtml(item.reviews)} &bull; $${Number(item.price).toFixed(2)} &bull; +&#2547;${PER_ORDER_REWARD.toFixed(2)}
                     ${item.queueIndex <= state.completedStep ? ` &bull; <strong style="color:#15803d;">Confirmed</strong>` : ""}
                   </div>
                 </div>
@@ -490,7 +506,8 @@ function renderSnatchDedicatedPage() {
     </div>
 
     <div style="padding:12px 6px; font-size:12px; color:#4b5563; background:#f9fafb; border-bottom:1px solid #eceef2;">
-      Queue progress: <strong>${state.completedStep} / ${TOTAL_SNATCH_ITEMS}</strong> confirmed. Tap <strong>Start ${nextStep} / 25</strong> to run animation &amp; confirm.
+      Queue progress: <strong>${state.completedStep} / ${TOTAL_SNATCH_ITEMS}</strong> &bull;
+      Daily Profit: <strong>&#2547; ${roundMoney(state.dailyProfit).toFixed(2)} / &#2547; ${TOTAL_BATCH_PROFIT.toFixed(2)}</strong>
     </div>
 
     <div class="action-pair">
@@ -504,7 +521,7 @@ function renderSnatchDedicatedPage() {
       id="sStartBtn"
       ${state.completedStep >= TOTAL_SNATCH_ITEMS || state.isProcessingOrder ? "disabled" : ""}
     >
-      ${state.completedStep >= TOTAL_SNATCH_ITEMS ? "Completed 25 / 25" : `Start ${nextStep} / ${TOTAL_SNATCH_ITEMS}`}
+      ${state.completedStep >= TOTAL_SNATCH_ITEMS ? "Completed 25 / 25 (৳500.00 Earned)" : `Start ${nextStep} / ${TOTAL_SNATCH_ITEMS}`}
     </button>
   `;
 
@@ -515,14 +532,13 @@ function renderSnatchDedicatedPage() {
   document.getElementById("sTabDesc")?.addEventListener("click", () => {
     state.snatchTab = "description";
     renderSnatchDedicatedPage();
-    showToast("Showing 25-item jewelry order queue.");
+    showToast("Complete all 25 orders to earn ৳500.00 daily profit.");
   });
   document.getElementById("sAccBtn")?.addEventListener("click", openAccountDetailsModal);
   document.getElementById("sRecBtn")?.addEventListener("click", openOrderRecordModal);
   document.getElementById("sStartBtn")?.addEventListener("click", runAnimatedOrderConfirmation);
 }
 
-/* Two-stage animation (Image 1 Digging Order -> Image 2 Luxury Splash -> Confirm) */
 function runAnimatedOrderConfirmation() {
   if (!state.session.loggedIn) {
     openPhoneAuthModal();
@@ -545,33 +561,40 @@ function runAnimatedOrderConfirmation() {
     setTimeout(() => {
       splashEl?.classList.remove("open");
 
-      const nextStep = state.completedStep + 1;
-      const item = state.queue25[nextStep - 1] || DEFAULT_PRODUCTS[0];
-      const rewardAmt = Number(item.reward || 15);
+      if (state.completedStep < TOTAL_SNATCH_ITEMS) {
+        const nextStep = state.completedStep + 1;
+        const item = state.queue25[nextStep - 1] || DEFAULT_PRODUCTS[0];
+        const rewardAmt = PER_ORDER_REWARD;
 
-      state.completedStep = nextStep;
-      state.session.balance = Number(state.session.balance || 0) + rewardAmt;
-      state.dailyProfit = Number(state.dailyProfit || 0) + rewardAmt;
+        state.completedStep = nextStep;
+        state.session.balance = roundMoney(Number(state.session.balance || 0) + rewardAmt);
+        state.dailyProfit =
+          nextStep === TOTAL_SNATCH_ITEMS
+            ? roundMoney(TOTAL_BATCH_PROFIT)
+            : roundMoney(Number(state.dailyProfit || 0) + rewardAmt);
 
-      const ord = {
-        step: nextStep,
-        itemName: item.name,
-        price: Number(item.price || 450),
-        reward: rewardAmt,
-        fullPhone: state.session.fullPhone,
-        status: "Confirmed",
-        createdAt: new Date().toISOString()
-      };
-      state.orders.unshift(ord);
-      addHistory(`Confirmed #${nextStep}/25 (+৳${rewardAmt.toFixed(2)})`);
+        const ord = {
+          step: nextStep,
+          itemName: item.name,
+          price: Number(item.price || 450),
+          reward: rewardAmt,
+          fullPhone: state.session.fullPhone,
+          status: "Confirmed",
+          createdAt: new Date().toISOString()
+        };
+        state.orders.unshift(ord);
+        addHistory(`Confirmed #${nextStep}/25 (+৳${rewardAmt.toFixed(2)})`);
+
+        saveLocal();
+        renderTopAndDrawer();
+        renderSnatchDedicatedPage();
+        showToast(`Order ${nextStep} / 25 Confirmed! (+৳${rewardAmt.toFixed(2)})`);
+
+        push(ref(db, "orders"), ord).catch(() => {});
+      }
 
       state.isProcessingOrder = false;
-      saveLocal();
-      renderTopAndDrawer();
       renderSnatchDedicatedPage();
-      showToast(`Order ${nextStep} / 25 Confirmed! (+৳${rewardAmt.toFixed(2)})`);
-
-      push(ref(db, "orders"), ord).catch(() => {});
     }, 1300);
   }, 1200);
 }
@@ -640,13 +663,13 @@ function openPhoneAuthModal() {
     state.registeredAccounts[fullPhone] = {
       fullPhone,
       password: pass,
-      balance: acc?.balance ?? state.session.balance
+      balance: roundMoney(acc?.balance ?? state.session.balance)
     };
     state.session.loggedIn = true;
     state.session.countryCode = code;
     state.session.phone = normalizePhone(phone);
     state.session.fullPhone = fullPhone;
-    state.session.balance = state.registeredAccounts[fullPhone].balance;
+    state.session.balance = roundMoney(state.registeredAccounts[fullPhone].balance);
 
     addHistory(`${isReg ? "Register" : "Login"}: ${fullPhone}`);
     saveLocal();
@@ -678,7 +701,11 @@ function openPhoneAuthModal() {
 }
 
 function openAccountDetailsModal() {
-  const bal = Number(state.session.balance || 0);
+  const bal = roundMoney(state.session.balance || 0);
+  const profit = roundMoney(state.dailyProfit || 0);
+  const outAmt = roundMoney(state.outOfFunds || 0);
+  const creditAmt = roundMoney(state.testCredit || 10000);
+
   openModal(`
     <div style="background:#cbd5e1; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
       <h3 style="font-size:19px; font-weight:700; margin:0 auto;">Account Details</h3>
@@ -692,11 +719,11 @@ function openAccountDetailsModal() {
         </div>
         <div>
           <div style="font-size:12px; color:#4b5563;">Daily Profit</div>
-          <div style="font-size:17px; font-weight:700;">${Number(state.dailyProfit || 0).toFixed(2)}</div>
+          <div style="font-size:17px; font-weight:700;">${profit.toFixed(2)}</div>
         </div>
         <div>
           <div style="font-size:12px; color:#4b5563;">Out of funds</div>
-          <div style="font-size:17px; font-weight:700;">${Number(state.outOfFunds || 0).toFixed(2)}</div>
+          <div style="font-size:17px; font-weight:700;">${outAmt.toFixed(2)}</div>
         </div>
         <div>
           <div style="font-size:12px; color:#4b5563;">Current Digging Order</div>
@@ -704,7 +731,7 @@ function openAccountDetailsModal() {
         </div>
         <div>
           <div style="font-size:12px; color:#4b5563;">Test Credit</div>
-          <div style="font-size:17px; font-weight:700;">${Number(state.testCredit || 10000).toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
+          <div style="font-size:17px; font-weight:700;">${creditAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
         </div>
       </div>
       <button type="button" class="btn btn-navy" id="accCloseBtn" style="width:100%; padding:13px; font-size:15px;">Close</button>
@@ -720,7 +747,7 @@ function openOrderRecordModal() {
           (o) => `
             <div style="border:1px solid #e5e7eb; border-radius:8px; padding:10px; margin-bottom:8px; background:#faf8f5;">
               <div style="font-weight:700; font-size:13px;">#${escapeHtml(o.step)} ${escapeHtml(o.itemName)}</div>
-              <div style="font-size:12px; color:#4b5563;">Confirmed &bull; Reward: +৳${Number(o.reward).toFixed(2)} &bull; $${Number(o.price).toFixed(2)}</div>
+              <div style="font-size:12px; color:#4b5563;">Confirmed &bull; Reward: +৳${roundMoney(o.reward).toFixed(2)} &bull; $${Number(o.price).toFixed(2)}</div>
             </div>
           `
         )
@@ -831,7 +858,6 @@ function bindEvents() {
   document.getElementById("navContactUsBtn")?.addEventListener("click", () => switchToSnatchPage("contact"));
   document.getElementById("footerContactLink")?.addEventListener("click", () => switchToSnatchPage("contact"));
 
-  /* Drawer actions */
   document.getElementById("drawerBuyInBtn")?.addEventListener("click", () => {
     closeDrawer();
     requireLogin(() => switchToSnatchPage("queue"));
@@ -867,8 +893,7 @@ function bindEvents() {
   });
 
   document.getElementById("checkInBtn")?.addEventListener("click", () => {
-    state.session.balance = Number(state.session.balance || 0) + 10;
-    state.dailyProfit = Number(state.dailyProfit || 0) + 10;
+    state.session.balance = roundMoney(Number(state.session.balance || 0) + 10);
     addHistory("Check In +৳10.00");
     saveLocal();
     renderTopAndDrawer();
