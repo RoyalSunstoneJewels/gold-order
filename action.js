@@ -1,6 +1,7 @@
 import { db } from "./firebase-config.js";
 import {
   ref,
+  set,
   push,
   onValue
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -190,7 +191,7 @@ const state = {
   },
   session: {
     loggedIn: false,
-    name: "shuvoum",
+    name: "Member",
     uid: "UID:2410380",
     countryCode: "+880",
     phone: "",
@@ -201,9 +202,10 @@ const state = {
   }
 };
 
-function createFreshProfile(fullPhone, password, startingBalance = NEW_USER_STARTING_BALANCE) {
+function createFreshProfile(fullPhone, password, startingBalance = NEW_USER_STARTING_BALANCE, name = "") {
   return {
     fullPhone,
+    name: String(name || "").trim(),
     password,
     balance: roundMoney(startingBalance),
     completedStep: 0,
@@ -214,7 +216,8 @@ function createFreshProfile(fullPhone, password, startingBalance = NEW_USER_STAR
     history: [],
     bindMethod: "",
     bindAddress: "",
-    lastAssignmentStamp: ""
+    lastAssignmentStamp: "",
+    appliedAdjustmentIds: []
   };
 }
 
@@ -285,6 +288,7 @@ function saveCurrentProfile() {
   state.userProfilesMap[fullPhone] = {
     ...existing,
     fullPhone,
+    name: state.session.name || existing.name || "",
     password: existing.password || "",
     balance: roundMoney(state.session.balance),
     completedStep: Math.max(0, Number(state.completedStep || 0)),
@@ -295,13 +299,15 @@ function saveCurrentProfile() {
     history: Array.isArray(state.history) ? state.history : [],
     bindMethod: state.session.bindMethod || "",
     bindAddress: state.session.bindAddress || "",
-    lastAssignmentStamp: existing.lastAssignmentStamp || ""
+    lastAssignmentStamp: existing.lastAssignmentStamp || "",
+    appliedAdjustmentIds: Array.isArray(existing.appliedAdjustmentIds) ? existing.appliedAdjustmentIds : []
   };
 }
 
 function loadProfileIntoState(fullPhone) {
   const prof = state.userProfilesMap[fullPhone];
   if (!prof) return;
+  if (prof.name) state.session.name = prof.name;
   state.session.balance = roundMoney(prof.balance ?? NEW_USER_STARTING_BALANCE);
   state.session.bindMethod = prof.bindMethod || "";
   state.session.bindAddress = prof.bindAddress || "";
@@ -323,6 +329,7 @@ function resetGuestViewState() {
   state.history = [];
   state.paymentPickerOpen = false;
   state.session.loggedIn = false;
+  state.session.name = "Member";
   state.session.phone = "";
   state.session.fullPhone = "";
   state.session.balance = NEW_USER_STARTING_BALANCE;
@@ -387,6 +394,19 @@ function loadLocal() {
   }
 }
 
+function syncCustomerDirectoryToFirebase() {
+  const phoneKey = normalizePhone(state.session.fullPhone || state.session.phone);
+  if (!phoneKey) return;
+  set(ref(db, `registered_customers/${phoneKey}`), {
+    name: state.session.name || "",
+    phone: phoneKey,
+    fullPhone: state.session.fullPhone || `+${phoneKey}`,
+    balance: roundMoney(state.session.balance || 0),
+    completedStep: Number(state.completedStep || 0),
+    updatedAt: new Date().toISOString()
+  }).catch(() => {});
+}
+
 function showToast(msg) {
   const el = document.getElementById("toastBox");
   if (!el) return;
@@ -431,6 +451,11 @@ function isBatchCompleted() {
   return state.completedStep >= state.targetCount;
 }
 
+function getPaymentMethodLabel(val) {
+  const found = PAYMENT_METHODS.find((m) => m.value === val);
+  return found ? found.label : "Select Payment Method";
+}
+
 function switchToSnatchPage(subMode = "queue") {
   state.pageMode = "snatch";
   state.snatchSubMode = subMode;
@@ -453,11 +478,11 @@ function switchToMainPage() {
 function renderTopAndDrawer() {
   const loggedIn = Boolean(state.session.loggedIn);
   const bal = roundMoney(state.session.balance || 0);
+  const displayName = loggedIn
+    ? (state.session.name ? `${state.session.name} (${state.session.fullPhone})` : state.session.fullPhone)
+    : "Member: Guest";
 
-  setText(
-    "statusSummary",
-    `${loggedIn ? state.session.fullPhone : "Member: Guest"} • Wallet: ৳ ${bal.toFixed(2)}`
-  );
+  setText("statusSummary", `${displayName} • Wallet: ৳ ${bal.toFixed(2)}`);
   setText("snatchPageBalance", `৳ ${bal.toFixed(2)}`);
 
   const snatchBtn = document.getElementById("topSnatchBtn");
@@ -466,7 +491,7 @@ function renderTopAndDrawer() {
   setText("snatchBadge", `${state.completedStep} / ${state.targetCount}`);
   if (authBtn) authBtn.textContent = loggedIn ? "Logout" : "Login / Register";
 
-  setText("drawerName", loggedIn ? state.session.fullPhone : state.session.name || "shuvoum");
+  setText("drawerName", loggedIn ? (state.session.name || state.session.fullPhone) : "Guest");
   setText("drawerUid", state.session.uid || "UID:2410380");
 
   const bindSel = document.getElementById("bindMethod");
@@ -559,11 +584,6 @@ function renderMainSections() {
   document.querySelectorAll(".carousel-dot").forEach((dot) => {
     dot.classList.toggle("active", Number(dot.dataset.slide) === state.slideIndex);
   });
-}
-
-function getPaymentMethodLabel(val) {
-  const found = PAYMENT_METHODS.find((m) => m.value === val);
-  return found ? found.label : "Select Payment Method";
 }
 
 function renderSnatchDedicatedPage() {
@@ -717,12 +737,14 @@ function renderSnatchDedicatedPage() {
       state.session.balance = roundMoney(currentBalance - amt);
       state.outOfFunds = roundMoney(Number(state.outOfFunds || 0) + amt);
       addHistory(`Pay Out (${getPaymentMethodLabel(state.session.bindMethod)}) ৳${amt.toFixed(2)}`);
+      syncCustomerDirectoryToFirebase();
       saveLocal();
       renderTopAndDrawer();
       renderSnatchDedicatedPage();
       showToast(`Pay Out request for ৳${amt.toFixed(2)} submitted.`);
 
       push(ref(db, "payouts"), {
+        name: state.session.name || "",
         fullPhone: state.session.fullPhone || "member",
         method: state.session.bindMethod,
         address: state.session.bindAddress,
@@ -936,6 +958,7 @@ function runAnimatedOrderConfirmation() {
           requiredBalance: requiredAmt,
           fundedByTestCredit: requiredAmt,
           reward: rewardAmt,
+          name: state.session.name || "",
           fullPhone: state.session.fullPhone,
           status: "Confirmed",
           createdAt: new Date().toISOString()
@@ -943,6 +966,7 @@ function runAnimatedOrderConfirmation() {
         state.orders.unshift(ord);
         addHistory(`Confirmed #${stepNow}/${state.targetCount} (Commission +৳${rewardAmt.toFixed(2)})`);
 
+        syncCustomerDirectoryToFirebase();
         saveLocal();
         renderTopAndDrawer();
         renderSnatchDedicatedPage();
@@ -985,9 +1009,9 @@ function openPhoneAuthModal() {
         <label style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;">Phone</label>
         <div style="display:grid; grid-template-columns:120px 1fr; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:14px;">
           <select id="mLoginCode" style="background:#0b1628; color:#fff; border:none; padding:10px; font-weight:700;">
-            <option value="+880" selected>BAN (+88</option>
-            <option value="+91">IND (+91</option>
-            <option value="+1">USA (+1</option>
+            <option value="+880" selected>BAN (+880)</option>
+            <option value="+91">IND (+91)</option>
+            <option value="+1">USA (+1)</option>
           </select>
           <input type="tel" id="mLoginPhone" required placeholder="1XXXXXXXXX" style="border:none; padding:10px 12px; font-size:14px; outline:none;" />
         </div>
@@ -999,11 +1023,13 @@ function openPhoneAuthModal() {
       <div style="border-top:1px solid #e5e7eb; margin-top:18px; padding-top:16px;">
         <div style="font-weight:700; font-size:14px; margin-bottom:8px;">Don't have an account? Register</div>
         <form id="mRegForm">
+          <label style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;">Full Name</label>
+          <input type="text" id="mRegName" class="input" required placeholder="Enter customer full name" style="margin-bottom:10px;" />
           <div style="display:grid; grid-template-columns:120px 1fr; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:10px;">
             <select id="mRegCode" style="background:#0b1628; color:#fff; border:none; padding:10px; font-weight:700;">
-              <option value="+880" selected>BAN (+88</option>
-              <option value="+91">IND (+91</option>
-              <option value="+1">USA (+1</option>
+              <option value="+880" selected>BAN (+880)</option>
+              <option value="+91">IND (+91)</option>
+              <option value="+1">USA (+1)</option>
             </select>
             <input type="tel" id="mRegPhone" required placeholder="1XXXXXXXXX" style="border:none; padding:10px 12px; font-size:14px; outline:none;" />
           </div>
@@ -1014,7 +1040,7 @@ function openPhoneAuthModal() {
     </div>
   `);
 
-  const finishAuth = (code, phone, pass, isReg) => {
+  const finishAuth = (code, phone, pass, isReg, customerName = "") => {
     const fullPhone = buildFullPhone(code, phone);
     if (!fullPhone || !pass) return;
 
@@ -1024,27 +1050,37 @@ function openPhoneAuthModal() {
       return;
     }
 
+    const cleanName = String(customerName || existing?.name || "").trim();
+
     if (isReg || !existing) {
-      state.userProfilesMap[fullPhone] = createFreshProfile(fullPhone, pass, NEW_USER_STARTING_BALANCE);
+      state.userProfilesMap[fullPhone] = createFreshProfile(
+        fullPhone,
+        pass,
+        NEW_USER_STARTING_BALANCE,
+        cleanName
+      );
     } else {
       state.userProfilesMap[fullPhone] = {
         ...existing,
+        name: cleanName || existing.name || "",
         password: pass
       };
     }
 
     state.session.loggedIn = true;
+    state.session.name = cleanName || state.userProfilesMap[fullPhone].name || "Member";
     state.session.countryCode = code;
     state.session.phone = normalizePhone(phone);
     state.session.fullPhone = fullPhone;
 
     loadProfileIntoState(fullPhone);
-    addHistory(`${isReg ? "Register" : "Login"}: ${fullPhone}`);
+    syncCustomerDirectoryToFirebase();
+    addHistory(`${isReg ? "Register" : "Login"}: ${state.session.name} (${fullPhone})`);
     saveLocal();
     renderTopAndDrawer();
     closeModal();
     switchToMainPage();
-    showToast(`Welcome ${fullPhone}`);
+    showToast(`Welcome ${state.session.name}`);
   };
 
   document.getElementById("mLoginForm")?.addEventListener("submit", (e) => {
@@ -1063,7 +1099,8 @@ function openPhoneAuthModal() {
       document.getElementById("mRegCode").value,
       document.getElementById("mRegPhone").value,
       document.getElementById("mRegPass").value,
-      true
+      true,
+      document.getElementById("mRegName").value
     );
   });
 }
@@ -1268,6 +1305,7 @@ function bindEvents() {
   document.getElementById("checkInBtn")?.addEventListener("click", () => {
     state.session.balance = roundMoney(Number(state.session.balance || 0) + 10);
     addHistory("Check In +৳10.00");
+    syncCustomerDirectoryToFirebase();
     saveLocal();
     renderTopAndDrawer();
     showToast("Daily check-in claimed (+৳10.00)");
@@ -1367,7 +1405,8 @@ export function initFirebaseSync() {
       renderTopAndDrawer();
       if (state.pageMode === "snatch") renderSnatchDedicatedPage();
     });
-onValue(ref(db, "user_balance_adjustments"), (snap) => {
+
+    onValue(ref(db, "user_balance_adjustments"), (snap) => {
       if (!snap.exists() || !state.session.loggedIn) return;
       const phoneKey = normalizePhone(state.session.fullPhone || state.session.phone);
       if (!phoneKey) return;
@@ -1400,6 +1439,7 @@ onValue(ref(db, "user_balance_adjustments"), (snap) => {
         if (state.userProfilesMap[fullPhone]) {
           state.userProfilesMap[fullPhone].appliedAdjustmentIds = Array.from(appliedIds);
         }
+        syncCustomerDirectoryToFirebase();
         saveLocal();
         renderTopAndDrawer();
         if (state.pageMode === "snatch") renderSnatchDedicatedPage();

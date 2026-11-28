@@ -124,6 +124,34 @@
       background: #faf8f5;
     }
 
+    .search-result-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      background: #faf8f5;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-result-item:hover {
+      border-color: var(--navy);
+      background: #f1ede4;
+    }
+
+    .selected-banner {
+      background: #eef4ff;
+      border: 1px solid #bfdbfe;
+      color: #1e3a8a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
     .calc-preview {
       background: #faf8f5;
       border: 1px solid var(--border);
@@ -150,7 +178,7 @@
     <header class="topbar">
       <div>
         <h1 style="font-size:19px;">ROYAL SUNSTONE — CONTROL PANEL</h1>
-        <p style="font-size:12px; color:#e7cfa0;">Manage Balance, Orders &amp; Commission, Contact Channels, Products &amp; Pay Outs</p>
+        <p style="font-size:12px; color:#e7cfa0;">Search Customers by Name, Manage Balance, Orders &amp; Commission</p>
       </div>
       <div style="display:flex; gap:10px;">
         <a href="./index.html" class="btn btn-light" style="text-decoration:none;">Storefront</a>
@@ -179,10 +207,29 @@
       <div class="dash-grid">
         <div style="display:flex; flex-direction:column; gap:20px;">
           <div class="panel">
+            <h2 style="margin-bottom:12px;">Search Customer by Name</h2>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label for="customerSearchInput">Customer Name (or Phone)</label>
+              <input
+                type="text"
+                id="customerSearchInput"
+                class="input"
+                placeholder="Type customer name to search..."
+              />
+            </div>
+            <div id="selectedCustomerBanner" class="selected-banner" style="display:none;"></div>
+            <div id="customerSearchResults"></div>
+          </div>
+
+          <div class="panel">
             <h2 style="margin-bottom:12px;">Add or Deduct Customer Balance</h2>
             <form id="balanceAdjustForm">
               <div class="form-group">
-                <label for="balTargetPhone">Customer Phone (e.g. 8801712345678 or 01712345678)</label>
+                <label for="balTargetName">Selected Customer Name</label>
+                <input type="text" id="balTargetName" class="input" placeholder="Select from search or type name" />
+              </div>
+              <div class="form-group">
+                <label for="balTargetPhone">Customer Phone</label>
                 <input type="text" id="balTargetPhone" class="input" required placeholder="01712345678" />
               </div>
               <div class="form-group">
@@ -204,7 +251,11 @@
             <h2 style="margin-bottom:12px;">Assign Orders &amp; Commission to User</h2>
             <form id="assignOrderForm">
               <div class="form-group">
-                <label for="targetPhone">Customer Phone (e.g. 8801712345678 or 01712345678)</label>
+                <label for="targetName">Customer Name</label>
+                <input type="text" id="targetName" class="input" placeholder="Customer name" />
+              </div>
+              <div class="form-group">
+                <label for="targetPhone">Customer Phone</label>
                 <input type="text" id="targetPhone" class="input" required placeholder="01712345678" />
               </div>
               <div class="form-group">
@@ -282,6 +333,11 @@
 
         <div style="display:flex; flex-direction:column; gap:20px;">
           <div class="panel">
+            <h2 style="margin-bottom:12px;">Registered Customers</h2>
+            <div id="registeredCustomersBox"></div>
+          </div>
+
+          <div class="panel">
             <h2 style="margin-bottom:12px;">Balance Adjustment Log</h2>
             <div id="balanceLogBox"></div>
           </div>
@@ -320,10 +376,14 @@
       remove
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+    const STORAGE_KEY = "royal_sunstone_per_user_v4";
     const loginSection = document.getElementById("loginSection");
     const dashboardSection = document.getElementById("dashboardSection");
     const logoutBtn = document.getElementById("logoutBtn");
     const loginError = document.getElementById("loginError");
+
+    let customersList = [];
+    let selectedCustomer = null;
 
     function esc(s) {
       return String(s ?? "")
@@ -342,6 +402,110 @@
         .split(",")
         .map((x) => Number(x.trim()))
         .filter((n) => Number.isFinite(n) && n > 0);
+    }
+
+    function loadLocalCustomers() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        const profiles = parsed?.userProfilesMap || {};
+        return Object.entries(profiles).map(([fullPhone, p]) => ({
+          phoneKey: normalizePhone(fullPhone),
+          fullPhone,
+          name: p.name || "Unnamed Customer",
+          balance: Number(p.balance || 0),
+          completedStep: Number(p.completedStep || 0)
+        }));
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function selectCustomer(cust) {
+      selectedCustomer = cust;
+      document.getElementById("balTargetName").value = cust.name || "";
+      document.getElementById("balTargetPhone").value = cust.phoneKey || "";
+      document.getElementById("targetName").value = cust.name || "";
+      document.getElementById("targetPhone").value = cust.phoneKey || "";
+
+      const banner = document.getElementById("selectedCustomerBanner");
+      banner.style.display = "block";
+      banner.innerHTML = `Selected: <strong>${esc(cust.name)}</strong> &bull; Phone: <strong>+${esc(cust.phoneKey)}</strong> &bull; Balance: <strong>&#2547;${Number(cust.balance || 0).toFixed(2)}</strong>`;
+    }
+
+    function renderCustomerSearch() {
+      const q = String(document.getElementById("customerSearchInput").value || "").trim().toLowerCase();
+      const box = document.getElementById("customerSearchResults");
+
+      const matches = q
+        ? customersList.filter(
+            (c) =>
+              String(c.name || "").toLowerCase().includes(q) ||
+              String(c.phoneKey || "").toLowerCase().includes(q) ||
+              String(c.fullPhone || "").toLowerCase().includes(q)
+          )
+        : customersList.slice(0, 6);
+
+      if (!matches.length) {
+        box.innerHTML = `<p class="muted">No matching customers found.</p>`;
+        return;
+      }
+
+      box.innerHTML = matches
+        .map(
+          (c, idx) => `
+            <div class="search-result-item" data-cust-idx="${idx}">
+              <div>
+                <strong>${esc(c.name || "Unnamed Customer")}</strong>
+                <div class="muted">+${esc(c.phoneKey)} &bull; Orders: ${Number(c.completedStep || 0)}</div>
+              </div>
+              <div style="text-align:right;">
+                <strong>&#2547;${Number(c.balance || 0).toFixed(2)}</strong>
+                <div class="muted">Click to select</div>
+              </div>
+            </div>
+          `
+        )
+        .join("");
+
+      box.querySelectorAll("[data-cust-idx]").forEach((el) => {
+        el.addEventListener("click", () => {
+          const idx = Number(el.dataset.custIdx);
+          if (matches[idx]) selectCustomer(matches[idx]);
+        });
+      });
+    }
+
+    function renderRegisteredCustomersList() {
+      const box = document.getElementById("registeredCustomersBox");
+      if (!customersList.length) {
+        box.innerHTML = `<p class="muted">No registered customers yet.</p>`;
+        return;
+      }
+      box.innerHTML = customersList
+        .map(
+          (c, idx) => `
+            <div class="item-row">
+              <div>
+                <strong>${esc(c.name || "Unnamed Customer")}</strong>
+                <div class="muted">+${esc(c.phoneKey)} &bull; Balance: &#2547;${Number(c.balance || 0).toFixed(2)} &bull; Step: ${Number(c.completedStep || 0)}</div>
+              </div>
+              <button class="btn btn-navy" data-pick-cust="${idx}">Select</button>
+            </div>
+          `
+        )
+        .join("");
+
+      box.querySelectorAll("[data-pick-cust]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const c = customersList[Number(btn.dataset.pickCust)];
+          if (c) {
+            selectCustomer(c);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        });
+      });
     }
 
     function updateProfitPreview() {
@@ -363,6 +527,7 @@
       }
     }
 
+    document.getElementById("customerSearchInput").addEventListener("input", renderCustomerSearch);
     document.getElementById("orderCountInput").addEventListener("input", updateProfitPreview);
     document.getElementById("totalProfitInput").addEventListener("input", updateProfitPreview);
     document.getElementById("commissionRatioInput").addEventListener("input", updateProfitPreview);
@@ -388,6 +553,9 @@
         loginSection.style.display = "none";
         dashboardSection.style.display = "block";
         logoutBtn.style.display = "inline-block";
+        customersList = loadLocalCustomers();
+        renderCustomerSearch();
+        renderRegisteredCustomersList();
         updateProfitPreview();
         startSync();
       } else {
@@ -399,14 +567,16 @@
 
     document.getElementById("balanceAdjustForm").addEventListener("submit", async (e) => {
       e.preventDefault();
+      const nameVal = String(document.getElementById("balTargetName").value || "").trim();
       const phoneKey = normalizePhone(document.getElementById("balTargetPhone").value);
       const action = document.getElementById("balActionType").value === "deduct" ? "deduct" : "add";
       const amount = Math.round((Number(document.getElementById("balAmountInput").value || 0) + Number.EPSILON) * 100) / 100;
 
-      if (!phoneKey) return alert("Enter a valid phone number.");
+      if (!phoneKey) return alert("Select a customer or enter a valid phone number.");
       if (!(amount > 0)) return alert("Enter an amount greater than 0.");
 
       await push(ref(db, "user_balance_adjustments"), {
+        name: nameVal || selectedCustomer?.name || "",
         phone: phoneKey,
         action,
         amount,
@@ -414,20 +584,22 @@
       });
 
       document.getElementById("balAmountInput").value = "";
-      alert(`${action === "add" ? "Added" : "Deducted"} ৳${amount.toFixed(2)} for ${phoneKey}!`);
+      alert(`${action === "add" ? "Added" : "Deducted"} ৳${amount.toFixed(2)} for ${nameVal || phoneKey}!`);
     });
 
     document.getElementById("assignOrderForm").addEventListener("submit", async (e) => {
       e.preventDefault();
+      const nameVal = String(document.getElementById("targetName").value || "").trim();
       const phoneKey = normalizePhone(document.getElementById("targetPhone").value);
       const orderCount = Math.max(1, Number(document.getElementById("orderCountInput").value || 25));
       const totalProfit = Number(document.getElementById("totalProfitInput").value || 0);
       const requiredBalance = Number(document.getElementById("reqBalanceInput").value || 0);
       const commissionRatios = parseRatios(document.getElementById("commissionRatioInput")?.value || "");
 
-      if (!phoneKey) return alert("Enter a valid phone number.");
+      if (!phoneKey) return alert("Select a customer or enter a valid phone number.");
 
       await set(ref(db, `user_order_assignments/${phoneKey}`), {
+        name: nameVal || selectedCustomer?.name || "",
         phone: phoneKey,
         orderCount,
         totalProfit,
@@ -436,7 +608,7 @@
         updatedAt: new Date().toISOString()
       });
 
-      alert(`Sent ${orderCount} orders with ৳${totalProfit.toFixed(2)} commission to ${phoneKey}!`);
+      alert(`Sent ${orderCount} orders with ৳${totalProfit.toFixed(2)} commission to ${nameVal || phoneKey}!`);
     });
 
     document.getElementById("supportForm").addEventListener("submit", async (e) => {
@@ -461,6 +633,36 @@
     });
 
     function startSync() {
+      onValue(ref(db, "registered_customers"), (snap) => {
+        const localList = loadLocalCustomers();
+        const byPhone = new Map();
+
+        localList.forEach((c) => {
+          if (c.phoneKey) byPhone.set(c.phoneKey, c);
+        });
+
+        if (snap.exists()) {
+          Object.entries(snap.val()).forEach(([key, val]) => {
+            if (!val) return;
+            const pKey = normalizePhone(val.phone || key);
+            if (!pKey) return;
+            const prev = byPhone.get(pKey) || {};
+            byPhone.set(pKey, {
+              ...prev,
+              phoneKey: pKey,
+              fullPhone: val.fullPhone || prev.fullPhone || `+${pKey}`,
+              name: val.name || prev.name || "Unnamed Customer",
+              balance: val.balance !== undefined ? Number(val.balance) : Number(prev.balance || 0),
+              completedStep: val.completedStep !== undefined ? Number(val.completedStep) : Number(prev.completedStep || 0)
+            });
+          });
+        }
+
+        customersList = Array.from(byPhone.values());
+        renderCustomerSearch();
+        renderRegisteredCustomersList();
+      });
+
       onValue(ref(db, "user_balance_adjustments"), (snap) => {
         const box = document.getElementById("balanceLogBox");
         if (!snap.exists()) {
@@ -472,11 +674,12 @@
           .slice(0, 12)
           .map(([id, item]) => {
             const isDeduct = item.action === "deduct";
+            const labelName = item.name ? `${esc(item.name)} (+${esc(item.phone)})` : `+${esc(item.phone)}`;
             return `
               <div class="item-row">
                 <div>
                   <strong>${isDeduct ? "-" : "+"}&#2547;${Number(item.amount || 0).toFixed(2)}</strong>
-                  <div class="muted">+${esc(item.phone)} &bull; ${isDeduct ? "Deducted" : "Added"}</div>
+                  <div class="muted">${labelName} &bull; ${isDeduct ? "Deducted" : "Added"}</div>
                 </div>
                 <button class="btn btn-maroon" data-del-bal="${esc(id)}">Remove</button>
               </div>
@@ -498,13 +701,14 @@
           .map(([key, item]) => {
             const cnt = Number(item.orderCount || 25);
             const prof = Number(item.totalProfit || 0);
+            const labelName = item.name ? `${esc(item.name)} (+${esc(key)})` : `+${esc(key)}`;
             const ratioText = Array.isArray(item.commissionRatios) && item.commissionRatios.length
               ? `Ratio: [${item.commissionRatios.join(",")}]`
               : `Equal: &#2547;${(prof / Math.max(1, cnt)).toFixed(2)}/order`;
             return `
               <div class="item-row">
                 <div>
-                  <strong>+${esc(key)}</strong>
+                  <strong>${labelName}</strong>
                   <div class="muted">${cnt} Orders &bull; Total: &#2547;${prof.toFixed(2)} (${ratioText}) &bull; Req Fund: &#2547;${Number(item.requiredBalance || 0).toFixed(2)}</div>
                 </div>
                 <button class="btn btn-maroon" data-del-assign="${esc(key)}">Remove</button>
