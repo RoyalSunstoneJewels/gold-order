@@ -7,6 +7,7 @@ import {
 
 const DEFAULT_BATCH_COUNT = 25;
 const DEFAULT_BATCH_PROFIT = 500;
+const DEFAULT_TEST_CREDIT = 10000;
 const NEW_USER_STARTING_BALANCE = 0;
 
 const DEFAULT_PRODUCTS = [
@@ -81,20 +82,44 @@ function roundMoney(num) {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
-function buildAssignedQueue(baseList, orderCount, totalProfit, requiredBalancePerOrder) {
+function normalizeWeights(weights, count) {
+  if (Array.isArray(weights) && weights.length > 0) {
+    const cleaned = Array.from({ length: count }, (_, idx) => {
+      const val = Number(weights[idx]);
+      return Number.isFinite(val) && val > 0 ? val : 1;
+    });
+    const sum = cleaned.reduce((a, b) => a + b, 0);
+    if (sum > 0) return cleaned.map((w) => w / sum);
+  }
+  return Array.from({ length: count }, () => 1 / count);
+}
+
+function buildAssignedQueue(
+  baseList,
+  orderCount,
+  totalProfit,
+  requiredBalancePerOrder,
+  commissionRatios = null
+) {
   const count = Math.max(1, Number(orderCount || DEFAULT_BATCH_COUNT));
   const profitTotal = roundMoney(totalProfit ?? DEFAULT_BATCH_PROFIT);
-  const perOrderProfit = roundMoney(profitTotal / count);
   const pool = Array.isArray(baseList) && baseList.length > 0 ? baseList : DEFAULT_PRODUCTS;
+  const ratios = normalizeWeights(commissionRatios, count);
 
+  let runningSum = 0;
   const list = [];
+
   for (let i = 0; i < count; i++) {
     const src = pool[i % pool.length];
     const isLast = i === count - 1;
     const allocatedProfit = isLast
-      ? roundMoney(profitTotal - perOrderProfit * (count - 1))
-      : perOrderProfit;
-    const itemPrice = roundMoney(requiredBalancePerOrder > 0 ? requiredBalancePerOrder : src.price || 450);
+      ? roundMoney(profitTotal - runningSum)
+      : roundMoney(profitTotal * ratios[i]);
+    runningSum = roundMoney(runningSum + allocatedProfit);
+
+    const itemPrice = roundMoney(
+      requiredBalancePerOrder > 0 ? requiredBalancePerOrder : src.price || 450
+    );
 
     list.push({
       queueIndex: i + 1,
@@ -122,7 +147,7 @@ const FALLBACK_IMG =
     "</svg>"
   );
 
-const STORAGE_KEY = "royal_sunstone_per_user_v2";
+const STORAGE_KEY = "royal_sunstone_per_user_v3";
 
 const state = {
   selectedCategory: "All",
@@ -133,14 +158,20 @@ const state = {
   isProcessingOrder: false,
   products: [...DEFAULT_PRODUCTS],
   assignedOrdersMap: {},
-  activeQueue: buildAssignedQueue(DEFAULT_PRODUCTS, DEFAULT_BATCH_COUNT, DEFAULT_BATCH_PROFIT, 0),
+  activeQueue: buildAssignedQueue(
+    DEFAULT_PRODUCTS,
+    DEFAULT_BATCH_COUNT,
+    DEFAULT_BATCH_PROFIT,
+    0,
+    null
+  ),
   targetCount: DEFAULT_BATCH_COUNT,
   targetProfit: DEFAULT_BATCH_PROFIT,
   requiredBalancePerOrder: 0,
   completedStep: 0,
   dailyProfit: 0,
   outOfFunds: 0,
-  testCredit: 10000,
+  testCredit: DEFAULT_TEST_CREDIT,
   orders: [],
   history: [],
   userProfilesMap: {},
@@ -169,11 +200,12 @@ function createFreshProfile(fullPhone, password, startingBalance = NEW_USER_STAR
     completedStep: 0,
     dailyProfit: 0,
     outOfFunds: 0,
-    testCredit: 10000,
+    testCredit: DEFAULT_TEST_CREDIT,
     orders: [],
     history: [],
     bindMethod: "bkash",
-    bindAddress: "45643"
+    bindAddress: "45643",
+    lastAssignmentStamp: ""
   };
 }
 
@@ -190,23 +222,47 @@ function buildFullPhone(code, raw) {
 function applyUserOrderAssignment() {
   const phoneKey = normalizePhone(state.session.fullPhone || state.session.phone);
   const custom = phoneKey ? state.assignedOrdersMap[phoneKey] : null;
+  const fullPhone = state.session.fullPhone;
 
   if (custom) {
     state.targetCount = Math.max(1, Number(custom.orderCount || DEFAULT_BATCH_COUNT));
     state.targetProfit = roundMoney(custom.totalProfit ?? DEFAULT_BATCH_PROFIT);
     state.requiredBalancePerOrder = roundMoney(custom.requiredBalance || 0);
+
+    const ratios = Array.isArray(custom.commissionRatios) ? custom.commissionRatios : null;
+    state.activeQueue = buildAssignedQueue(
+      state.products,
+      state.targetCount,
+      state.targetProfit,
+      state.requiredBalancePerOrder,
+      ratios
+    );
+
+    if (fullPhone && state.userProfilesMap[fullPhone]) {
+      const prof = state.userProfilesMap[fullPhone];
+      const stamp = String(custom.updatedAt || "");
+      if (stamp && prof.lastAssignmentStamp !== stamp) {
+        prof.lastAssignmentStamp = stamp;
+        prof.completedStep = 0;
+        prof.dailyProfit = 0;
+        prof.outOfFunds = 0;
+        state.completedStep = 0;
+        state.dailyProfit = 0;
+        state.outOfFunds = 0;
+      }
+    }
   } else {
     state.targetCount = DEFAULT_BATCH_COUNT;
     state.targetProfit = DEFAULT_BATCH_PROFIT;
     state.requiredBalancePerOrder = 0;
+    state.activeQueue = buildAssignedQueue(
+      state.products,
+      state.targetCount,
+      state.targetProfit,
+      state.requiredBalancePerOrder,
+      null
+    );
   }
-
-  state.activeQueue = buildAssignedQueue(
-    state.products,
-    state.targetCount,
-    state.targetProfit,
-    state.requiredBalancePerOrder
-  );
 
   if (state.completedStep > state.targetCount) {
     state.completedStep = state.targetCount;
@@ -225,11 +281,12 @@ function saveCurrentProfile() {
     completedStep: Math.max(0, Number(state.completedStep || 0)),
     dailyProfit: roundMoney(state.dailyProfit || 0),
     outOfFunds: roundMoney(state.outOfFunds || 0),
-    testCredit: roundMoney(state.testCredit ?? 10000),
+    testCredit: roundMoney(state.testCredit ?? DEFAULT_TEST_CREDIT),
     orders: Array.isArray(state.orders) ? state.orders : [],
     history: Array.isArray(state.history) ? state.history : [],
     bindMethod: state.session.bindMethod || "bkash",
-    bindAddress: state.session.bindAddress || "45643"
+    bindAddress: state.session.bindAddress || "45643",
+    lastAssignmentStamp: existing.lastAssignmentStamp || ""
   };
 }
 
@@ -242,7 +299,7 @@ function loadProfileIntoState(fullPhone) {
   state.completedStep = Math.max(0, Number(prof.completedStep || 0));
   state.dailyProfit = roundMoney(prof.dailyProfit || 0);
   state.outOfFunds = roundMoney(prof.outOfFunds || 0);
-  state.testCredit = roundMoney(prof.testCredit ?? 10000);
+  state.testCredit = roundMoney(prof.testCredit ?? DEFAULT_TEST_CREDIT);
   state.orders = Array.isArray(prof.orders) ? prof.orders : [];
   state.history = Array.isArray(prof.history) ? prof.history : [];
   applyUserOrderAssignment();
@@ -252,7 +309,7 @@ function resetGuestViewState() {
   state.completedStep = 0;
   state.dailyProfit = 0;
   state.outOfFunds = 0;
-  state.testCredit = 10000;
+  state.testCredit = DEFAULT_TEST_CREDIT;
   state.orders = [];
   state.history = [];
   state.session.loggedIn = false;
@@ -354,6 +411,14 @@ function getRequiredAmountForItem(item) {
   const minSet = roundMoney(state.requiredBalancePerOrder || 0);
   if (minSet > 0) return minSet;
   return roundMoney(item?.price || 0);
+}
+
+function getTotalUsableFunds() {
+  return roundMoney(Number(state.session.balance || 0) + Number(state.testCredit || 0));
+}
+
+function isBatchCompleted() {
+  return state.completedStep >= state.targetCount;
 }
 
 function switchToSnatchPage(subMode = "queue") {
@@ -485,21 +550,32 @@ function renderSnatchDedicatedPage() {
 
   if (state.snatchSubMode === "payout") {
     const bal = roundMoney(state.session.balance || 0);
+    const unlocked = isBatchCompleted();
     body.innerHTML = `
       <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">Snatch Orders &gt; Pay Out</div>
       <h1 style="font-size:28px; font-weight:800; margin-bottom:16px;">Pay Out</h1>
       <div style="background:#1d2d44; color:#fff; border-radius:14px; padding:22px; display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
         <div>
-          <div style="font-size:13px; color:#cbd5e1;">Wallet Funds</div>
+          <div style="font-size:13px; color:#cbd5e1;">Wallet Funds (Test Credit: &#2547;${roundMoney(state.testCredit).toFixed(2)})</div>
           <div style="font-size:30px; font-weight:800; margin-top:4px;">&#2547; ${bal.toFixed(2)}</div>
         </div>
         <span style="font-size:28px;">&#128091;</span>
       </div>
 
+      ${
+        !unlocked
+          ? `
+            <div class="balance-warning-box" style="margin-bottom:16px;">
+              Complete all ${state.targetCount} orders (${state.completedStep} / ${state.targetCount} done) to unlock Pay Out via bKash, Nagad, Rocket, Upay, or Bank.
+            </div>
+          `
+          : ""
+      }
+
       <div style="font-weight:700; font-size:13px; margin-bottom:8px;">Collection Address</div>
       <div style="border:1px solid #86efac; background:#f0fdf4; border-radius:12px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
         <div>
-          <div style="font-weight:700;">${escapeHtml(state.session.bindMethod || "bkash")}</div>
+          <div style="font-weight:700; text-transform:uppercase;">${escapeHtml(state.session.bindMethod || "bkash")}</div>
           <div style="color:#4b5563; font-size:13px;">${escapeHtml(state.session.bindAddress || "45643")}</div>
         </div>
         <span style="color:#16a34a; font-weight:800; font-size:18px;">&#10003;</span>
@@ -509,8 +585,8 @@ function renderSnatchDedicatedPage() {
         <label style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;">Pay Out Amount</label>
         <input type="number" id="pagePayOutAmt" class="input" step="0.01" min="1" required placeholder="&#2547; Enter amount" style="margin-bottom:14px;" />
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px; font-size:12px; color:#475569; margin-bottom:16px;">
-          <div style="font-weight:700; margin-bottom:4px;">Rules : Minimum Pay Out &#2547;500</div>
-          <p>Please bind in the correct bank account information. Double-check details before submitting.</p>
+          <div style="font-weight:700; margin-bottom:4px;">Rules : Complete ${state.targetCount} Orders &bull; Minimum Pay Out &#2547;500</div>
+          <p>Supported methods: bKash, Nagad, Rocket, Upay, and Bank. Double-check your bound account before submitting.</p>
         </div>
         <button type="submit" style="width:100%; background:#090b10; color:#fff; border:none; border-radius:8px; padding:15px; font-size:15px; font-weight:700; cursor:pointer;">Pay Out</button>
       </form>
@@ -520,16 +596,19 @@ function renderSnatchDedicatedPage() {
     document.getElementById("backToQueueBtn")?.addEventListener("click", () => switchToSnatchPage("queue"));
     document.getElementById("pagePayOutForm")?.addEventListener("submit", (e) => {
       e.preventDefault();
+      if (!isBatchCompleted()) {
+        return showToast(`Complete all ${state.targetCount} orders first (${state.completedStep}/${state.targetCount}).`);
+      }
       const amt = roundMoney(document.getElementById("pagePayOutAmt").value || 0);
       if (amt < 500) return showToast("Minimum Pay Out is ৳500.");
       if (amt > roundMoney(state.session.balance || 0)) return showToast("Insufficient Wallet Funds.");
       state.session.balance = roundMoney(Number(state.session.balance) - amt);
       state.outOfFunds = roundMoney(Number(state.outOfFunds || 0) + amt);
-      addHistory(`Pay Out ৳${amt.toFixed(2)}`);
+      addHistory(`Pay Out (${state.session.bindMethod}) ৳${amt.toFixed(2)}`);
       saveLocal();
       renderTopAndDrawer();
       renderSnatchDedicatedPage();
-      showToast(`Pay Out request for ৳${amt.toFixed(2)} submitted.`);
+      showToast(`Pay Out request for ৳${amt.toFixed(2)} submitted via ${state.session.bindMethod}.`);
       push(ref(db, "payouts"), {
         fullPhone: state.session.fullPhone || "member",
         method: state.session.bindMethod,
@@ -573,7 +652,8 @@ function renderSnatchDedicatedPage() {
   const nextItem = state.activeQueue[state.completedStep];
   const requiredForNext = nextItem ? getRequiredAmountForItem(nextItem) : 0;
   const currentBal = roundMoney(state.session.balance || 0);
-  const insufficientBalance = state.completedStep < state.targetCount && currentBal < requiredForNext;
+  const usableFunds = getTotalUsableFunds();
+  const insufficientBalance = state.completedStep < state.targetCount && usableFunds < requiredForNext;
   const visibleItems = state.activeQueue.slice(0, 5);
 
   body.innerHTML = `
@@ -605,7 +685,7 @@ function renderSnatchDedicatedPage() {
                 <div>
                   <div style="font-weight:700; font-size:14px; color:#111827;">${escapeHtml(item.name)}</div>
                   <div style="font-size:12px; color:#4b5563; margin-top:3px;">
-                    &#9733; ${escapeHtml(item.reviews)} &bull; Req: &#2547;${getRequiredAmountForItem(item).toFixed(2)} &bull; Profit: +&#2547;${roundMoney(item.reward).toFixed(2)}
+                    &#9733; ${escapeHtml(item.reviews)} &bull; Order Fund: &#2547;${getRequiredAmountForItem(item).toFixed(2)} &bull; Commission: +&#2547;${roundMoney(item.reward).toFixed(2)}
                     ${item.queueIndex <= state.completedStep ? ` &bull; <strong style="color:#15803d;">Confirmed</strong>` : ""}
                   </div>
                 </div>
@@ -619,15 +699,26 @@ function renderSnatchDedicatedPage() {
 
     <div style="padding:12px 6px; font-size:12px; color:#4b5563; background:#f9fafb; border-bottom:1px solid #eceef2;">
       Progress: <strong>${state.completedStep} / ${state.targetCount}</strong> &bull;
-      Batch Profit: <strong>&#2547; ${roundMoney(state.dailyProfit).toFixed(2)} / &#2547; ${roundMoney(state.targetProfit).toFixed(2)}</strong> &bull;
-      Balance: <strong>&#2547; ${currentBal.toFixed(2)}</strong>
+      Profit: <strong>&#2547; ${roundMoney(state.dailyProfit).toFixed(2)} / &#2547; ${roundMoney(state.targetProfit).toFixed(2)}</strong> &bull;
+      Test Credit: <strong>&#2547; ${roundMoney(state.testCredit).toFixed(2)}</strong> &bull;
+      Wallet: <strong>&#2547; ${currentBal.toFixed(2)}</strong>
     </div>
+
+    ${
+      isBatchCompleted()
+        ? `
+          <div style="background:#f0fdf4; border:1px solid #86efac; color:#166534; border-radius:10px; padding:12px 14px; margin-top:14px; font-size:13px; font-weight:700;">
+            All ${state.targetCount} orders completed! Total profit &#2547;${roundMoney(state.dailyProfit).toFixed(2)} added. You can now Pay Out via bKash, Nagad, Rocket, Upay, or Bank.
+          </div>
+        `
+        : ""
+    }
 
     ${
       insufficientBalance
         ? `
           <div class="balance-warning-box">
-            Insufficient balance to confirm Order #${nextStep}. Required: &#2547;${requiredForNext.toFixed(2)}, Available: &#2547;${currentBal.toFixed(2)}. Please add balance before confirming.
+            Insufficient fund to confirm Order #${nextStep}. Required: &#2547;${requiredForNext.toFixed(2)}, Available (Test Credit + Wallet): &#2547;${usableFunds.toFixed(2)}.
           </div>
         `
         : ""
@@ -646,7 +737,7 @@ function renderSnatchDedicatedPage() {
     >
       ${
         state.completedStep >= state.targetCount
-          ? `Completed ${state.targetCount} / ${state.targetCount}`
+          ? `Completed ${state.targetCount} / ${state.targetCount} (Ready to Pay Out)`
           : `Start ${nextStep} / ${state.targetCount}`
       }
     </button>
@@ -659,7 +750,7 @@ function renderSnatchDedicatedPage() {
   document.getElementById("sTabDesc")?.addEventListener("click", () => {
     state.snatchTab = "description";
     renderSnatchDedicatedPage();
-    showToast(`Assigned ${state.targetCount} orders with ৳${roundMoney(state.targetProfit).toFixed(2)} total profit.`);
+    showToast(`Assigned ${state.targetCount} orders with ৳${roundMoney(state.targetProfit).toFixed(2)} total commission.`);
   });
   document.getElementById("sAccBtn")?.addEventListener("click", openAccountDetailsModal);
   document.getElementById("sRecBtn")?.addEventListener("click", openOrderRecordModal);
@@ -681,18 +772,19 @@ function runAnimatedOrderConfirmation() {
   };
 
   const requiredAmt = getRequiredAmountForItem(item);
-  const currentBal = roundMoney(state.session.balance || 0);
+  const usableFunds = getTotalUsableFunds();
 
-  if (currentBal < requiredAmt) {
-    const shortfall = roundMoney(requiredAmt - currentBal);
-    state.outOfFunds = roundMoney(Number(state.outOfFunds || 0) + shortfall);
-    addHistory(`Blocked #${nextStep}: Need ৳${requiredAmt.toFixed(2)}`);
+  if (usableFunds < requiredAmt) {
+    const shortfall = roundMoney(requiredAmt - usableFunds);
+    state.outOfFunds = shortfall;
+    addHistory(`Blocked #${nextStep}: Shortfall ৳${shortfall.toFixed(2)}`);
     saveLocal();
     renderSnatchDedicatedPage();
-    showToast(`Insufficient balance! Need ৳${requiredAmt.toFixed(2)} to confirm order.`);
+    showToast(`Insufficient fund! Need ৳${requiredAmt.toFixed(2)} (Test Credit + Wallet).`);
     return;
   }
 
+  state.outOfFunds = 0;
   state.isProcessingOrder = true;
   renderSnatchDedicatedPage();
 
@@ -711,31 +803,41 @@ function runAnimatedOrderConfirmation() {
       if (state.completedStep < state.targetCount) {
         const stepNow = state.completedStep + 1;
         const targetItem = state.activeQueue[stepNow - 1] || item;
-        const rewardAmt = roundMoney(targetItem.reward ?? state.targetProfit / Math.max(1, state.targetCount));
+        const rewardAmt = roundMoney(
+          targetItem.reward ?? state.targetProfit / Math.max(1, state.targetCount)
+        );
 
         state.completedStep = stepNow;
-        state.session.balance = roundMoney(Number(state.session.balance || 0) + rewardAmt);
         state.dailyProfit =
           stepNow === state.targetCount
             ? roundMoney(state.targetProfit)
             : roundMoney(Number(state.dailyProfit || 0) + rewardAmt);
 
+        if (stepNow === state.targetCount) {
+          state.session.balance = roundMoney(Number(state.session.balance || 0) + state.dailyProfit);
+        }
+
         const ord = {
           step: stepNow,
           itemName: targetItem.name,
           requiredBalance: requiredAmt,
+          fundedByTestCredit: requiredAmt,
           reward: rewardAmt,
           fullPhone: state.session.fullPhone,
           status: "Confirmed",
           createdAt: new Date().toISOString()
         };
         state.orders.unshift(ord);
-        addHistory(`Confirmed #${stepNow}/${state.targetCount} (+৳${rewardAmt.toFixed(2)})`);
+        addHistory(`Confirmed #${stepNow}/${state.targetCount} (Commission +৳${rewardAmt.toFixed(2)})`);
 
         saveLocal();
         renderTopAndDrawer();
         renderSnatchDedicatedPage();
-        showToast(`Order ${stepNow} / ${state.targetCount} Confirmed! (+৳${rewardAmt.toFixed(2)})`);
+        showToast(
+          stepNow === state.targetCount
+            ? `All ${state.targetCount} orders completed! Profit ৳${state.dailyProfit.toFixed(2)} credited.`
+            : `Order ${stepNow} / ${state.targetCount} Confirmed! (+৳${rewardAmt.toFixed(2)})`
+        );
 
         push(ref(db, "orders"), ord).catch(() => {});
       }
@@ -857,7 +959,7 @@ function openAccountDetailsModal() {
   const bal = roundMoney(state.session.balance || 0);
   const profit = roundMoney(state.dailyProfit || 0);
   const outAmt = roundMoney(state.outOfFunds || 0);
-  const creditAmt = roundMoney(state.testCredit || 10000);
+  const creditAmt = roundMoney(state.testCredit ?? DEFAULT_TEST_CREDIT);
 
   openModal(`
     <div style="background:#cbd5e1; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
@@ -900,7 +1002,7 @@ function openOrderRecordModal() {
           (o) => `
             <div style="border:1px solid #e5e7eb; border-radius:8px; padding:10px; margin-bottom:8px; background:#faf8f5;">
               <div style="font-weight:700; font-size:13px;">#${escapeHtml(o.step)} ${escapeHtml(o.itemName)}</div>
-              <div style="font-size:12px; color:#4b5563;">Confirmed &bull; Profit: +৳${roundMoney(o.reward).toFixed(2)}</div>
+              <div style="font-size:12px; color:#4b5563;">Confirmed &bull; Commission: +৳${roundMoney(o.reward).toFixed(2)}</div>
             </div>
           `
         )
@@ -1141,6 +1243,7 @@ export function initFirebaseSync() {
             orderCount: Math.max(1, Number(val.orderCount || DEFAULT_BATCH_COUNT)),
             totalProfit: roundMoney(val.totalProfit ?? DEFAULT_BATCH_PROFIT),
             requiredBalance: roundMoney(val.requiredBalance || 0),
+            commissionRatios: Array.isArray(val.commissionRatios) ? val.commissionRatios : null,
             updatedAt: val.updatedAt || ""
           };
         }
