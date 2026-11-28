@@ -150,7 +150,7 @@
     <header class="topbar">
       <div>
         <h1 style="font-size:19px;">ROYAL SUNSTONE — CONTROL PANEL</h1>
-        <p style="font-size:12px; color:#e7cfa0;">Assign Orders &amp; Commission, Contact Channels, Products &amp; Pay Outs</p>
+        <p style="font-size:12px; color:#e7cfa0;">Manage Balance, Orders &amp; Commission, Contact Channels, Products &amp; Pay Outs</p>
       </div>
       <div style="display:flex; gap:10px;">
         <a href="./index.html" class="btn btn-light" style="text-decoration:none;">Storefront</a>
@@ -178,6 +178,28 @@
     <section id="dashboardSection" style="display:none;">
       <div class="dash-grid">
         <div style="display:flex; flex-direction:column; gap:20px;">
+          <div class="panel">
+            <h2 style="margin-bottom:12px;">Add or Deduct Customer Balance</h2>
+            <form id="balanceAdjustForm">
+              <div class="form-group">
+                <label for="balTargetPhone">Customer Phone (e.g. 8801712345678 or 01712345678)</label>
+                <input type="text" id="balTargetPhone" class="input" required placeholder="01712345678" />
+              </div>
+              <div class="form-group">
+                <label for="balActionType">Action</label>
+                <select id="balActionType" class="input">
+                  <option value="add">Add Balance (+)</option>
+                  <option value="deduct">Deduct Balance (-)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="balAmountInput">Amount (&#2547;)</label>
+                <input type="number" id="balAmountInput" class="input" required min="0.01" step="0.01" placeholder="Enter amount" />
+              </div>
+              <button type="submit" class="btn btn-gold" style="width:100%;">Update Balance</button>
+            </form>
+          </div>
+
           <div class="panel">
             <h2 style="margin-bottom:12px;">Assign Orders &amp; Commission to User</h2>
             <form id="assignOrderForm">
@@ -259,6 +281,11 @@
         </div>
 
         <div style="display:flex; flex-direction:column; gap:20px;">
+          <div class="panel">
+            <h2 style="margin-bottom:12px;">Balance Adjustment Log</h2>
+            <div id="balanceLogBox"></div>
+          </div>
+
           <div class="panel">
             <h2 style="margin-bottom:12px;">Assigned User Orders</h2>
             <div id="assignedUsersBox"></div>
@@ -370,6 +397,26 @@
       }
     });
 
+    document.getElementById("balanceAdjustForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const phoneKey = normalizePhone(document.getElementById("balTargetPhone").value);
+      const action = document.getElementById("balActionType").value === "deduct" ? "deduct" : "add";
+      const amount = Math.round((Number(document.getElementById("balAmountInput").value || 0) + Number.EPSILON) * 100) / 100;
+
+      if (!phoneKey) return alert("Enter a valid phone number.");
+      if (!(amount > 0)) return alert("Enter an amount greater than 0.");
+
+      await push(ref(db, "user_balance_adjustments"), {
+        phone: phoneKey,
+        action,
+        amount,
+        createdAt: new Date().toISOString()
+      });
+
+      document.getElementById("balAmountInput").value = "";
+      alert(`${action === "add" ? "Added" : "Deducted"} ৳${amount.toFixed(2)} for ${phoneKey}!`);
+    });
+
     document.getElementById("assignOrderForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const phoneKey = normalizePhone(document.getElementById("targetPhone").value);
@@ -414,6 +461,33 @@
     });
 
     function startSync() {
+      onValue(ref(db, "user_balance_adjustments"), (snap) => {
+        const box = document.getElementById("balanceLogBox");
+        if (!snap.exists()) {
+          box.innerHTML = `<p class="muted">No balance adjustments yet.</p>`;
+          return;
+        }
+        box.innerHTML = Object.entries(snap.val())
+          .reverse()
+          .slice(0, 12)
+          .map(([id, item]) => {
+            const isDeduct = item.action === "deduct";
+            return `
+              <div class="item-row">
+                <div>
+                  <strong>${isDeduct ? "-" : "+"}&#2547;${Number(item.amount || 0).toFixed(2)}</strong>
+                  <div class="muted">+${esc(item.phone)} &bull; ${isDeduct ? "Deducted" : "Added"}</div>
+                </div>
+                <button class="btn btn-maroon" data-del-bal="${esc(id)}">Remove</button>
+              </div>
+            `;
+          })
+          .join("");
+        box.querySelectorAll("[data-del-bal]").forEach((b) =>
+          b.addEventListener("click", () => remove(ref(db, `user_balance_adjustments/${b.dataset.delBal}`)))
+        );
+      });
+
       onValue(ref(db, "user_order_assignments"), (snap) => {
         const box = document.getElementById("assignedUsersBox");
         if (!snap.exists()) {
@@ -494,4 +568,3 @@
   </script>
 </body>
 </html>
-```[cite: 2, 6]

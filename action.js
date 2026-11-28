@@ -1367,5 +1367,43 @@ export function initFirebaseSync() {
       renderTopAndDrawer();
       if (state.pageMode === "snatch") renderSnatchDedicatedPage();
     });
+onValue(ref(db, "user_balance_adjustments"), (snap) => {
+      if (!snap.exists() || !state.session.loggedIn) return;
+      const phoneKey = normalizePhone(state.session.fullPhone || state.session.phone);
+      if (!phoneKey) return;
+
+      const fullPhone = state.session.fullPhone;
+      const prof = state.userProfilesMap[fullPhone];
+      const appliedIds = new Set(Array.isArray(prof?.appliedAdjustmentIds) ? prof.appliedAdjustmentIds : []);
+
+      let changed = false;
+      Object.entries(snap.val()).forEach(([adjId, adj]) => {
+        if (!adj || appliedIds.has(adjId)) return;
+        const targetPhone = normalizePhone(adj.phone);
+        if (targetPhone !== phoneKey) return;
+
+        const amt = roundMoney(adj.amount || 0);
+        if (!(amt > 0)) return;
+
+        appliedIds.add(adjId);
+        if (adj.action === "deduct") {
+          state.session.balance = Math.max(0, roundMoney(Number(state.session.balance || 0) - amt));
+          addHistory(`Admin Deducted -৳${amt.toFixed(2)}`);
+        } else {
+          state.session.balance = roundMoney(Number(state.session.balance || 0) + amt);
+          addHistory(`Admin Added +৳${amt.toFixed(2)}`);
+        }
+        changed = true;
+      });
+
+      if (changed) {
+        if (state.userProfilesMap[fullPhone]) {
+          state.userProfilesMap[fullPhone].appliedAdjustmentIds = Array.from(appliedIds);
+        }
+        saveLocal();
+        renderTopAndDrawer();
+        if (state.pageMode === "snatch") renderSnatchDedicatedPage();
+      }
+    });
   } catch (_) {}
 }
