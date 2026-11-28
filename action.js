@@ -5,9 +5,8 @@ import {
   onValue
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-const TOTAL_SNATCH_ITEMS = 25;
-const TOTAL_BATCH_PROFIT = 500;
-const PER_ORDER_REWARD = TOTAL_BATCH_PROFIT / TOTAL_SNATCH_ITEMS; // ৳20.00 per order
+const DEFAULT_BATCH_COUNT = 25;
+const DEFAULT_BATCH_PROFIT = 500;
 
 const DEFAULT_PRODUCTS = [
   {
@@ -15,7 +14,6 @@ const DEFAULT_PRODUCTS = [
     name: "7 Three Prong Sunstone Tennis Bracelet In 14K White Gold",
     category: "Bracelets",
     price: 480,
-    reward: PER_ORDER_REWARD,
     reviews: "2,507 Reviews",
     tag: "25% OFF*",
     image: "./images/bracelet-1.jpg",
@@ -26,7 +24,6 @@ const DEFAULT_PRODUCTS = [
     name: "Royal Sunstone Velvet Travel Case & Gift Set",
     category: "Necklaces",
     price: 320,
-    reward: PER_ORDER_REWARD,
     reviews: "9,410 Reviews",
     tag: "OUR GIFT TO YOU",
     image: "./images/necklace-1.jpg",
@@ -37,7 +34,6 @@ const DEFAULT_PRODUCTS = [
     name: "Imperial Sunstone & Bezel Drop Earrings in 14K Yellow Gold",
     category: "Earrings",
     price: 540,
-    reward: PER_ORDER_REWARD,
     reviews: "17,362 Reviews",
     tag: "NEW ARRIVAL",
     image: "./images/earrings-1.jpg",
@@ -48,7 +44,6 @@ const DEFAULT_PRODUCTS = [
     name: "Dot Dash Sunstone Solitaire Ring in 14k Yellow Gold",
     category: "Rings",
     price: 450,
-    reward: PER_ORDER_REWARD,
     reviews: "11,348 Reviews",
     tag: "SIGNATURE",
     image: "./images/ring-1.jpg",
@@ -85,24 +80,34 @@ function roundMoney(num) {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
-function build25Queue(baseList) {
+function buildAssignedQueue(baseList, orderCount, totalProfit, requiredBalancePerOrder) {
+  const count = Math.max(1, Number(orderCount || DEFAULT_BATCH_COUNT));
+  const profitTotal = roundMoney(totalProfit ?? DEFAULT_BATCH_PROFIT);
+  const perOrderProfit = roundMoney(profitTotal / count);
   const pool = Array.isArray(baseList) && baseList.length > 0 ? baseList : DEFAULT_PRODUCTS;
-  const out = [];
-  for (let i = 0; i < TOTAL_SNATCH_ITEMS; i++) {
+
+  const list = [];
+  for (let i = 0; i < count; i++) {
     const src = pool[i % pool.length];
-    out.push({
+    const isLast = i === count - 1;
+    const allocatedProfit = isLast
+      ? roundMoney(profitTotal - perOrderProfit * (count - 1))
+      : perOrderProfit;
+    const itemPrice = roundMoney(requiredBalancePerOrder > 0 ? requiredBalancePerOrder : src.price || 450);
+
+    list.push({
       queueIndex: i + 1,
       id: `${src.id || "item"}-${i + 1}`,
-      name: i < pool.length ? src.name : `${src.name} — Edition #${i + 1}`,
+      name: i < pool.length ? src.name : `${src.name} — Allocation #${i + 1}`,
       category: src.category || "Jewelry",
-      price: Number(src.price || 450) + (i % 5) * 20,
-      reward: PER_ORDER_REWARD,
+      price: itemPrice,
+      reward: allocatedProfit,
       reviews: src.reviews || `${(1400 + i * 310).toLocaleString()} Reviews`,
       image: src.image || "",
       description: src.description || "Royal Sunstone Jewels fine piece."
     });
   }
-  return out;
+  return list;
 }
 
 const FALLBACK_IMG =
@@ -116,7 +121,7 @@ const FALLBACK_IMG =
     </svg>`
   );
 
-const STORAGE_KEY = "royal_sunstone_separate_snatch_v1";
+const STORAGE_KEY = "royal_sunstone_admin_orders_v1";
 
 const state = {
   selectedCategory: "All",
@@ -126,7 +131,11 @@ const state = {
   snatchTab: "collection",
   isProcessingOrder: false,
   products: [...DEFAULT_PRODUCTS],
-  queue25: build25Queue(DEFAULT_PRODUCTS),
+  assignedOrdersMap: {}, // keyed by normalized phone digits -> { orderCount, totalProfit, requiredBalance, updatedAt }
+  activeQueue: buildAssignedQueue(DEFAULT_PRODUCTS, DEFAULT_BATCH_COUNT, DEFAULT_BATCH_PROFIT, 0),
+  targetCount: DEFAULT_BATCH_COUNT,
+  targetProfit: DEFAULT_BATCH_PROFIT,
+  requiredBalancePerOrder: 0,
   completedStep: 0,
   dailyProfit: 0,
   outOfFunds: 0,
@@ -151,12 +160,49 @@ const state = {
   }
 };
 
+function normalizePhone(raw) {
+  return String(raw || "").replace(/\D/g, "").replace(/^0+/, "");
+}
+
+function buildFullPhone(code, raw) {
+  const clean = normalizePhone(raw);
+  if (!clean) return "";
+  return `+${String(code || "+880").replace(/\D/g, "")}${clean}`;
+}
+
+function applyUserOrderAssignment() {
+  const phoneKey = normalizePhone(state.session.fullPhone || state.session.phone);
+  const custom = phoneKey ? state.assignedOrdersMap[phoneKey] : null;
+
+  if (custom) {
+    state.targetCount = Math.max(1, Number(custom.orderCount || DEFAULT_BATCH_COUNT));
+    state.targetProfit = roundMoney(custom.totalProfit ?? DEFAULT_BATCH_PROFIT);
+    state.requiredBalancePerOrder = roundMoney(custom.requiredBalance || 0);
+  } else {
+    state.targetCount = DEFAULT_BATCH_COUNT;
+    state.targetProfit = DEFAULT_BATCH_PROFIT;
+    state.requiredBalancePerOrder = 0;
+  }
+
+  state.activeQueue = buildAssignedQueue(
+    state.products,
+    state.targetCount,
+    state.targetProfit,
+    state.requiredBalancePerOrder
+  );
+
+  if (state.completedStep > state.targetCount) {
+    state.completedStep = state.targetCount;
+  }
+}
+
 function saveLocal() {
   try {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
         products: state.products,
+        assignedOrdersMap: state.assignedOrdersMap,
         completedStep: state.completedStep,
         dailyProfit: roundMoney(state.dailyProfit),
         outOfFunds: roundMoney(state.outOfFunds),
@@ -181,11 +227,11 @@ function loadLocal() {
     const p = JSON.parse(raw);
     if (Array.isArray(p.products) && p.products.length > 0) {
       state.products = p.products;
-      state.queue25 = build25Queue(state.products);
     }
-    if (typeof p.completedStep === "number") {
-      state.completedStep = Math.max(0, Math.min(TOTAL_SNATCH_ITEMS, p.completedStep));
+    if (p.assignedOrdersMap && typeof p.assignedOrdersMap === "object") {
+      state.assignedOrdersMap = p.assignedOrdersMap;
     }
+    if (typeof p.completedStep === "number") state.completedStep = Math.max(0, p.completedStep);
     if (typeof p.dailyProfit === "number") state.dailyProfit = roundMoney(p.dailyProfit);
     if (typeof p.outOfFunds === "number") state.outOfFunds = roundMoney(p.outOfFunds);
     if (typeof p.testCredit === "number") state.testCredit = roundMoney(p.testCredit);
@@ -204,17 +250,8 @@ function loadLocal() {
         balance: roundMoney(p.session.balance ?? state.session.balance)
       };
     }
+    applyUserOrderAssignment();
   } catch (_) {}
-}
-
-function normalizePhone(raw) {
-  return String(raw || "").replace(/\D/g, "").replace(/^0+/, "");
-}
-
-function buildFullPhone(code, raw) {
-  const clean = normalizePhone(raw);
-  if (!clean) return "";
-  return `+${String(code || "+880").replace(/\D/g, "")}${clean}`;
 }
 
 function showToast(msg) {
@@ -223,7 +260,7 @@ function showToast(msg) {
   el.textContent = msg;
   el.classList.add("show");
   clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => el.classList.remove("show"), 2800);
+  showToast._t = setTimeout(() => el.classList.remove("show"), 3000);
 }
 
 function setText(id, val) {
@@ -245,6 +282,19 @@ function addHistory(text) {
     time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   });
   state.history = state.history.slice(0, 20);
+}
+
+function getRequiredAmountForItem(item) {
+  const minSet = roundMoney(state.requiredBalancePerOrder || 0);
+  if (minSet > 0) return minSet;
+  return roundMoney(item?.price || 0);
+}
+
+function hasEnoughBalanceForNextOrder() {
+  if (state.completedStep >= state.targetCount) return true;
+  const nextItem = state.activeQueue[state.completedStep];
+  const required = getRequiredAmountForItem(nextItem);
+  return roundMoney(state.session.balance || 0) >= required;
 }
 
 function switchToSnatchPage(subMode = "queue") {
@@ -277,7 +327,7 @@ function renderTopAndDrawer() {
   const snatchBtn = document.getElementById("topSnatchBtn");
   const authBtn = document.getElementById("topAuthBtn");
   if (snatchBtn) snatchBtn.style.display = loggedIn ? "inline-block" : "none";
-  setText("snatchBadge", `${state.completedStep} / ${TOTAL_SNATCH_ITEMS}`);
+  setText("snatchBadge", `${state.completedStep} / ${state.targetCount}`);
   if (authBtn) authBtn.textContent = loggedIn ? "Logout" : "Login / Register";
 
   setText("drawerName", loggedIn ? state.session.fullPhone : state.session.name || "shuvoum");
@@ -460,9 +510,13 @@ function renderSnatchDedicatedPage() {
     return;
   }
 
-  /* Default Snatch Queue View */
-  const nextStep = Math.min(TOTAL_SNATCH_ITEMS, state.completedStep + 1);
-  const visibleItems = state.queue25.slice(0, 5);
+  /* Snatch Queue View */
+  const nextStep = Math.min(state.targetCount, state.completedStep + 1);
+  const nextItem = state.activeQueue[state.completedStep];
+  const requiredForNext = nextItem ? getRequiredAmountForItem(nextItem) : 0;
+  const currentBal = roundMoney(state.session.balance || 0);
+  const insufficientBalance = state.completedStep < state.targetCount && currentBal < requiredForNext;
+  const visibleItems = state.activeQueue.slice(0, 5);
 
   body.innerHTML = `
     <div style="font-size:12px; color:#6b7280; margin-bottom:6px;">Home &gt; Snatch Orders</div>
@@ -470,7 +524,7 @@ function renderSnatchDedicatedPage() {
 
     <div class="tab-strip">
       <button type="button" class="tab-btn ${state.snatchTab === "collection" ? "active" : ""}" id="sTabCol">
-        Collection (25)
+        Collection (${state.targetCount})
       </button>
       <button type="button" class="tab-btn ${state.snatchTab === "description" ? "active" : ""}" id="sTabDesc">
         Description
@@ -493,7 +547,7 @@ function renderSnatchDedicatedPage() {
                 <div>
                   <div style="font-weight:700; font-size:14px; color:#111827;">${escapeHtml(item.name)}</div>
                   <div style="font-size:12px; color:#4b5563; margin-top:3px;">
-                    &#9733; ${escapeHtml(item.reviews)} &bull; $${Number(item.price).toFixed(2)} &bull; +&#2547;${PER_ORDER_REWARD.toFixed(2)}
+                    &#9733; ${escapeHtml(item.reviews)} &bull; Req: &#2547;${getRequiredAmountForItem(item).toFixed(2)} &bull; Profit: +&#2547;${roundMoney(item.reward).toFixed(2)}
                     ${item.queueIndex <= state.completedStep ? ` &bull; <strong style="color:#15803d;">Confirmed</strong>` : ""}
                   </div>
                 </div>
@@ -506,9 +560,20 @@ function renderSnatchDedicatedPage() {
     </div>
 
     <div style="padding:12px 6px; font-size:12px; color:#4b5563; background:#f9fafb; border-bottom:1px solid #eceef2;">
-      Queue progress: <strong>${state.completedStep} / ${TOTAL_SNATCH_ITEMS}</strong> &bull;
-      Daily Profit: <strong>&#2547; ${roundMoney(state.dailyProfit).toFixed(2)} / &#2547; ${TOTAL_BATCH_PROFIT.toFixed(2)}</strong>
+      Progress: <strong>${state.completedStep} / ${state.targetCount}</strong> &bull;
+      Batch Profit: <strong>&#2547; ${roundMoney(state.dailyProfit).toFixed(2)} / &#2547; ${roundMoney(state.targetProfit).toFixed(2)}</strong> &bull;
+      Balance: <strong>&#2547; ${currentBal.toFixed(2)}</strong>
     </div>
+
+    ${
+      insufficientBalance
+        ? `
+          <div class="balance-warning-box">
+            Insufficient balance to confirm Order #${nextStep}. Required: &#2547;${requiredForNext.toFixed(2)}, Available: &#2547;${currentBal.toFixed(2)}. Please add balance before confirming.
+          </div>
+        `
+        : ""
+    }
 
     <div class="action-pair">
       <button type="button" class="btn btn-purple" id="sAccBtn">Account Details</button>
@@ -517,11 +582,15 @@ function renderSnatchDedicatedPage() {
 
     <button
       type="button"
-      class="start-batch-btn"
+      class="start-batch-btn ${insufficientBalance ? "locked" : ""}"
       id="sStartBtn"
-      ${state.completedStep >= TOTAL_SNATCH_ITEMS || state.isProcessingOrder ? "disabled" : ""}
+      ${state.completedStep >= state.targetCount || state.isProcessingOrder ? "disabled" : ""}
     >
-      ${state.completedStep >= TOTAL_SNATCH_ITEMS ? "Completed 25 / 25 (৳500.00 Earned)" : `Start ${nextStep} / ${TOTAL_SNATCH_ITEMS}`}
+      ${
+        state.completedStep >= state.targetCount
+          ? `Completed ${state.targetCount} / ${state.targetCount}`
+          : `Start ${nextStep} / ${state.targetCount}`
+      }
     </button>
   `;
 
@@ -532,7 +601,7 @@ function renderSnatchDedicatedPage() {
   document.getElementById("sTabDesc")?.addEventListener("click", () => {
     state.snatchTab = "description";
     renderSnatchDedicatedPage();
-    showToast("Complete all 25 orders to earn ৳500.00 daily profit.");
+    showToast(`Assigned ${state.targetCount} orders with ৳${roundMoney(state.targetProfit).toFixed(2)} total profit.`);
   });
   document.getElementById("sAccBtn")?.addEventListener("click", openAccountDetailsModal);
   document.getElementById("sRecBtn")?.addEventListener("click", openOrderRecordModal);
@@ -544,7 +613,27 @@ function runAnimatedOrderConfirmation() {
     openPhoneAuthModal();
     return;
   }
-  if (state.isProcessingOrder || state.completedStep >= TOTAL_SNATCH_ITEMS) return;
+  if (state.isProcessingOrder || state.completedStep >= state.targetCount) return;
+
+  const nextStep = state.completedStep + 1;
+  const item = state.activeQueue[nextStep - 1] || {
+    name: "Royal Sunstone Piece",
+    price: 450,
+    reward: roundMoney(state.targetProfit / Math.max(1, state.targetCount))
+  };
+
+  const requiredAmt = getRequiredAmountForItem(item);
+  const currentBal = roundMoney(state.session.balance || 0);
+
+  if (currentBal < requiredAmt) {
+    const shortfall = roundMoney(requiredAmt - currentBal);
+    state.outOfFunds = roundMoney(Number(state.outOfFunds || 0) + shortfall);
+    addHistory(`Blocked #${nextStep}: Need ৳${requiredAmt.toFixed(2)}`);
+    saveLocal();
+    renderSnatchDedicatedPage();
+    showToast(`Insufficient balance! Need ৳${requiredAmt.toFixed(2)} to confirm order.`);
+    return;
+  }
 
   state.isProcessingOrder = true;
   renderSnatchDedicatedPage();
@@ -561,34 +650,34 @@ function runAnimatedOrderConfirmation() {
     setTimeout(() => {
       splashEl?.classList.remove("open");
 
-      if (state.completedStep < TOTAL_SNATCH_ITEMS) {
-        const nextStep = state.completedStep + 1;
-        const item = state.queue25[nextStep - 1] || DEFAULT_PRODUCTS[0];
-        const rewardAmt = PER_ORDER_REWARD;
+      if (state.completedStep < state.targetCount) {
+        const stepNow = state.completedStep + 1;
+        const targetItem = state.activeQueue[stepNow - 1] || item;
+        const rewardAmt = roundMoney(targetItem.reward ?? state.targetProfit / Math.max(1, state.targetCount));
 
-        state.completedStep = nextStep;
+        state.completedStep = stepNow;
         state.session.balance = roundMoney(Number(state.session.balance || 0) + rewardAmt);
         state.dailyProfit =
-          nextStep === TOTAL_SNATCH_ITEMS
-            ? roundMoney(TOTAL_BATCH_PROFIT)
+          stepNow === state.targetCount
+            ? roundMoney(state.targetProfit)
             : roundMoney(Number(state.dailyProfit || 0) + rewardAmt);
 
         const ord = {
-          step: nextStep,
-          itemName: item.name,
-          price: Number(item.price || 450),
+          step: stepNow,
+          itemName: targetItem.name,
+          requiredBalance: requiredAmt,
           reward: rewardAmt,
           fullPhone: state.session.fullPhone,
           status: "Confirmed",
           createdAt: new Date().toISOString()
         };
         state.orders.unshift(ord);
-        addHistory(`Confirmed #${nextStep}/25 (+৳${rewardAmt.toFixed(2)})`);
+        addHistory(`Confirmed #${stepNow}/${state.targetCount} (+৳${rewardAmt.toFixed(2)})`);
 
         saveLocal();
         renderTopAndDrawer();
         renderSnatchDedicatedPage();
-        showToast(`Order ${nextStep} / 25 Confirmed! (+৳${rewardAmt.toFixed(2)})`);
+        showToast(`Order ${stepNow} / ${state.targetCount} Confirmed! (+৳${rewardAmt.toFixed(2)})`);
 
         push(ref(db, "orders"), ord).catch(() => {});
       }
@@ -671,6 +760,7 @@ function openPhoneAuthModal() {
     state.session.fullPhone = fullPhone;
     state.session.balance = roundMoney(state.registeredAccounts[fullPhone].balance);
 
+    applyUserOrderAssignment();
     addHistory(`${isReg ? "Register" : "Login"}: ${fullPhone}`);
     saveLocal();
     renderTopAndDrawer();
@@ -727,7 +817,7 @@ function openAccountDetailsModal() {
         </div>
         <div>
           <div style="font-size:12px; color:#4b5563;">Current Digging Order</div>
-          <div style="font-size:17px; font-weight:700;">${state.completedStep} / ${TOTAL_SNATCH_ITEMS}</div>
+          <div style="font-size:17px; font-weight:700;">${state.completedStep} / ${state.targetCount}</div>
         </div>
         <div>
           <div style="font-size:12px; color:#4b5563;">Test Credit</div>
@@ -747,7 +837,7 @@ function openOrderRecordModal() {
           (o) => `
             <div style="border:1px solid #e5e7eb; border-radius:8px; padding:10px; margin-bottom:8px; background:#faf8f5;">
               <div style="font-weight:700; font-size:13px;">#${escapeHtml(o.step)} ${escapeHtml(o.itemName)}</div>
-              <div style="font-size:12px; color:#4b5563;">Confirmed &bull; Reward: +৳${roundMoney(o.reward).toFixed(2)} &bull; $${Number(o.price).toFixed(2)}</div>
+              <div style="font-size:12px; color:#4b5563;">Confirmed &bull; Profit: +৳${roundMoney(o.reward).toFixed(2)}</div>
             </div>
           `
         )
@@ -967,11 +1057,35 @@ export function initFirebaseSync() {
         : Object.entries(raw).map(([id, item]) => ({ id, ...item }));
       if (list.length > 0) {
         state.products = list;
-        state.queue25 = build25Queue(state.products);
+        applyUserOrderAssignment();
         saveLocal();
         renderMainSections();
         if (state.pageMode === "snatch") renderSnatchDedicatedPage();
       }
+    });
+
+    onValue(ref(db, "user_order_assignments"), (snap) => {
+      if (!snap.exists()) return;
+      const raw = snap.val();
+      const map = {};
+      Object.entries(raw).forEach(([key, val]) => {
+        if (!val) return;
+        const cleanKey = normalizePhone(val.phone || key);
+        if (cleanKey) {
+          map[cleanKey] = {
+            phone: cleanKey,
+            orderCount: Math.max(1, Number(val.orderCount || DEFAULT_BATCH_COUNT)),
+            totalProfit: roundMoney(val.totalProfit ?? DEFAULT_BATCH_PROFIT),
+            requiredBalance: roundMoney(val.requiredBalance || 0),
+            updatedAt: val.updatedAt || ""
+          };
+        }
+      });
+      state.assignedOrdersMap = map;
+      applyUserOrderAssignment();
+      saveLocal();
+      renderTopAndDrawer();
+      if (state.pageMode === "snatch") renderSnatchDedicatedPage();
     });
   } catch (_) {}
 }

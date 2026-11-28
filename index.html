@@ -40,12 +40,10 @@
       text-decoration: none;
     }
 
-    /* Main Storefront Wrapper (hidden when Snatch Orders page is open) */
     #mainStorefrontView.hidden-page {
       display: none;
     }
 
-    /* Top Utility & Header */
     .top-utility {
       background: #fff;
       border-bottom: 1px solid var(--line);
@@ -158,7 +156,6 @@
       color: var(--gold);
     }
 
-    /* Hero Banner */
     .bf-hero {
       position: relative;
       background: radial-gradient(circle at 65% 40%, #2c2419 0%, #090909 70%);
@@ -558,11 +555,22 @@
       background: #f9fafb;
     }
 
+    .balance-warning-box {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 14px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
     .action-pair {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-top: 22px;
+      margin-top: 18px;
     }
 
     .start-batch-btn {
@@ -578,7 +586,11 @@
       cursor: pointer;
     }
 
-    /* Step 1 Animation Overlay (Image 1: Digging Order...) */
+    .start-batch-btn.locked {
+      background: #6b7280;
+    }
+
+    /* Step 1 Animation Overlay (Digging Order...) */
     .digging-overlay {
       position: fixed;
       inset: 0;
@@ -656,7 +668,7 @@
       50% { opacity: 1; }
     }
 
-    /* Step 2 Animation Overlay (Image 2: Dark Navy + Golden Orbital Rings) */
+    /* Step 2 Animation Overlay (Royal Sunstone Luxury Splash) */
     .luxury-splash-overlay {
       position: fixed;
       inset: 0;
@@ -762,7 +774,6 @@
       height: 1px;
       background: linear-gradient(90deg, transparent, #d4af37, transparent);
       margin-top: 20px;
-      position: relative;
     }
 
     @keyframes spinCounter {
@@ -989,7 +1000,6 @@
   </style>
 </head>
 <body>
-  <!-- Main Storefront Page -->
   <div id="mainStorefrontView">
     <div class="top-utility">
       <div class="util-left">
@@ -1179,7 +1189,7 @@
     </footer>
   </div>
 
-  <!-- Separate Dedicated Snatch Orders Page (Opens outside Main Page) -->
+  <!-- Dedicated Snatch Orders Page -->
   <div id="snatchDedicatedPage">
     <div class="snatch-page-topbar">
       <div style="display:flex; align-items:center; gap:12px;">
@@ -1195,7 +1205,7 @@
     <div class="snatch-page-container" id="snatchPageBody"></div>
   </div>
 
-  <!-- Step 1 Overlay (Image 1: Digging Order...) -->
+  <!-- Step 1 Overlay: Digging Order... -->
   <div class="digging-overlay" id="diggingOverlay">
     <div class="digging-card">
       <div class="spinner-ring-disc">
@@ -1206,7 +1216,7 @@
     </div>
   </div>
 
-  <!-- Step 2 Overlay (Image 2: Royal Sunstone Luxury Splash Animation) -->
+  <!-- Step 2 Overlay: Royal Sunstone Luxury Splash -->
   <div class="luxury-splash-overlay" id="luxurySplashOverlay">
     <div class="orbital-stage">
       <div class="orbit-ring outer"><div class="orbit-dot"></div></div>
