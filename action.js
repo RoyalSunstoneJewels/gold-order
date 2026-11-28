@@ -138,7 +138,7 @@ const FALLBACK_IMG =
     "</svg>"
   );
 
-const STORAGE_KEY = "royal_sunstone_per_user_v3";
+const STORAGE_KEY = "royal_sunstone_per_user_v4";
 
 const state = {
   selectedCategory: "All",
@@ -785,4 +785,25 @@ function openPhoneAuthModal() {
 
     const existing = state.userProfilesMap[fullPhone];
     if (existing && existing.password !== pass) {
-      showToast("Incorrect password
+      showToast("Incorrect password.");
+      return;
+    }
+    if (!existing) {
+      state.userProfilesMap[fullPhone] = createFreshUserProfile(fullPhone, pass, NEW_USER_STARTING_BALANCE);
+    }
+
+    state.session.loggedIn = true;
+    state.session.countryCode = code;
+    state.session.phone = normalizePhone(phone);
+    state.session.fullPhone = fullPhone;
+
+    syncCurrentProfileToState();
+    addHistory(`Login: ${fullPhone}`);
+    saveLocal();
+    renderTopAndDrawer();
+    closeModal();
+    switchToSnatchPage("queue");
+    showToast(`Logged in as ${fullPhone}`);
+  });
+
+  document.getElementById("mRegForm")?.addEventListener("submit", (
