@@ -1,7 +1,6 @@
 import { db } from "./firebase-config.js";
 import {
   ref,
-  set,
   push,
   onValue
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -110,13 +109,15 @@ const FALLBACK_IMG =
     </svg>`
   );
 
-const STORAGE_KEY = "royal_sunstone_layout_v1";
+const STORAGE_KEY = "royal_sunstone_separate_snatch_v1";
 
 const state = {
   selectedCategory: "All",
   slideIndex: 0,
-  activePanel: null, // null | "snatchPanel" | "payOutPanel" | "contactPanel"
+  pageMode: "main", // "main" | "snatch"
+  snatchSubMode: "queue", // "queue" | "payout" | "contact"
   snatchTab: "collection",
+  isProcessingOrder: false,
   products: [...DEFAULT_PRODUCTS],
   queue25: build25Queue(DEFAULT_PRODUCTS),
   completedStep: 0,
@@ -230,19 +231,21 @@ function addHistory(text) {
   state.history = state.history.slice(0, 20);
 }
 
-function openPanel(panelId) {
-  state.activePanel = panelId;
-  ["snatchPanel", "payOutPanel", "contactPanel"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle("active", id === panelId);
-  });
-  renderActivePanel();
-  document.getElementById(panelId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+function switchToSnatchPage(subMode = "queue") {
+  state.pageMode = "snatch";
+  state.snatchSubMode = subMode;
+  document.getElementById("mainStorefrontView")?.classList.add("hidden-page");
+  document.getElementById("snatchDedicatedPage")?.classList.add("active");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  renderSnatchDedicatedPage();
 }
 
-function closePanel(panelId) {
-  if (state.activePanel === panelId) state.activePanel = null;
-  document.getElementById(panelId)?.classList.remove("active");
+function switchToMainPage() {
+  state.pageMode = "main";
+  document.getElementById("snatchDedicatedPage")?.classList.remove("active");
+  document.getElementById("mainStorefrontView")?.classList.remove("hidden-page");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  renderMainSections();
 }
 
 function renderTopAndDrawer() {
@@ -253,6 +256,7 @@ function renderTopAndDrawer() {
     "statusSummary",
     `${loggedIn ? state.session.fullPhone : "Member: Guest"} • Wallet: ৳ ${bal.toFixed(2)}`
   );
+  setText("snatchPageBalance", `৳ ${bal.toFixed(2)}`);
 
   const snatchBtn = document.getElementById("topSnatchBtn");
   const authBtn = document.getElementById("topAuthBtn");
@@ -297,8 +301,8 @@ function renderMainSections() {
               <div style="font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:#666; margin-bottom:4px;">
                 ${escapeHtml(item.tag || item.category || "FINE JEWELRY")}
               </div>
-              <div class="showcase-tile-title">${escapeHtml(item.name)}</div>
-              <div class="showcase-tile-meta">$${Number(item.price || 0).toFixed(2)} &bull; ${escapeHtml(item.category || "")}</div>
+              <div style="font-size:15px; font-weight:700; color:#141414; margin-bottom:4px;">${escapeHtml(item.name)}</div>
+              <div style="font-size:12px; color:#666;">$${Number(item.price || 0).toFixed(2)} &bull; ${escapeHtml(item.category || "")}</div>
             </div>
           </article>
         `;
@@ -350,105 +354,21 @@ function renderMainSections() {
   });
 }
 
-function renderActivePanel() {
-  if (state.activePanel === "snatchPanel") {
-    const panel = document.getElementById("snatchPanel");
-    if (!panel) return;
-    const nextStep = Math.min(TOTAL_SNATCH_ITEMS, state.completedStep + 1);
-    const visibleItems = state.queue25.slice(0, 5);
+function renderSnatchDedicatedPage() {
+  const body = document.getElementById("snatchPageBody");
+  if (!body) return;
 
-    panel.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span style="font-size:12px; color:#6b7280;">Home &gt; <strong>Snatch Orders</strong></span>
-        <button type="button" class="btn btn-outline" id="closeSnatchPanelBtn">&times; Close</button>
-      </div>
-      <h2 style="font-size:26px; font-weight:800; margin-bottom:14px;">Royal Sunstone Order</h2>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid #e5e7eb; margin-bottom:8px;">
-        <button type="button" id="tabColBtn" style="background:none; border:none; padding:12px; font-weight:700; cursor:pointer; border-bottom:${state.snatchTab === "collection" ? "3px solid #111" : "3px solid transparent"};">
-          Collection (25)
-        </button>
-        <button type="button" id="tabDescBtn" style="background:none; border:none; padding:12px; font-weight:700; cursor:pointer; border-bottom:${state.snatchTab === "description" ? "3px solid #111" : "3px solid transparent"};">
-          Description
-        </button>
-      </div>
-
-      <div>
-        ${visibleItems
-          .map(
-            (item) => `
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 6px; border-bottom:1px solid #eceef2;">
-                <div style="display:flex; align-items:center; gap:14px;">
-                  <strong style="font-size:17px; width:24px; text-align:center;">${item.queueIndex}</strong>
-                  <img
-                    src="${item.image || FALLBACK_IMG}"
-                    alt="${escapeHtml(item.name)}"
-                    style="width:62px; height:62px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb;"
-                    onerror="this.onerror=null;this.src='${FALLBACK_IMG}';"
-                  />
-                  <div>
-                    <div style="font-weight:700; font-size:14px;">${escapeHtml(item.name)}</div>
-                    <div style="font-size:12px; color:#4b5563; margin-top:2px;">
-                      &#9733; ${escapeHtml(item.reviews)} &bull; $${Number(item.price).toFixed(2)}
-                      ${item.queueIndex <= state.completedStep ? ` &bull; <span style="color:#15803d; font-weight:700;">Done</span>` : ""}
-                    </div>
-                  </div>
-                </div>
-                <span style="font-size:20px; color:#6b7280;">&rsaquo;</span>
-              </div>
-            `
-          )
-          .join("")}
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px;">
-        <button type="button" class="btn btn-purple" id="panelAccBtn">Account Details</button>
-        <button type="button" class="btn btn-purple" id="panelRecBtn">Order Record</button>
-      </div>
-
-      <button
-        type="button"
-        id="panelStartBtn"
-        ${state.completedStep >= TOTAL_SNATCH_ITEMS ? "disabled" : ""}
-        style="width:100%; margin-top:12px; padding:15px; border:none; border-radius:10px; background:#0b1628; color:#fff; font-size:16px; font-weight:800; cursor:pointer;"
-      >
-        ${state.completedStep >= TOTAL_SNATCH_ITEMS ? "Completed 25 / 25" : `Start ${nextStep} / ${TOTAL_SNATCH_ITEMS}`}
-      </button>
-    `;
-
-    document.getElementById("closeSnatchPanelBtn")?.addEventListener("click", () => closePanel("snatchPanel"));
-    document.getElementById("tabColBtn")?.addEventListener("click", () => {
-      state.snatchTab = "collection";
-      renderActivePanel();
-    });
-    document.getElementById("tabDescBtn")?.addEventListener("click", () => {
-      state.snatchTab = "description";
-      renderActivePanel();
-      showToast("Showing jewelry queue description.");
-    });
-    document.getElementById("panelAccBtn")?.addEventListener("click", openAccountDetailsModal);
-    document.getElementById("panelRecBtn")?.addEventListener("click", openOrderRecordModal);
-    document.getElementById("panelStartBtn")?.addEventListener("click", handleNextSnatchStep);
-  }
-
-  if (state.activePanel === "payOutPanel") {
-    const panel = document.getElementById("payOutPanel");
-    if (!panel) return;
+  if (state.snatchSubMode === "payout") {
     const bal = Number(state.session.balance || 0);
-
-    panel.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span style="font-size:12px; color:#6b7280;">Home &gt; Pay Out</span>
-        <button type="button" class="btn btn-outline" id="closePayOutBtn">&times; Close</button>
-      </div>
-      <h2 style="font-size:26px; font-weight:800; margin-bottom:14px;">Pay Out</h2>
-
-      <div style="background:#1d2d44; color:#fff; border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+    body.innerHTML = `
+      <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">Snatch Orders &gt; Pay Out</div>
+      <h1 style="font-size:28px; font-weight:800; margin-bottom:16px;">Pay Out</h1>
+      <div style="background:#1d2d44; color:#fff; border-radius:14px; padding:22px; display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
         <div>
           <div style="font-size:13px; color:#cbd5e1;">Wallet Funds</div>
-          <div style="font-size:28px; font-weight:800; margin-top:4px;">&#2547; ${bal.toFixed(2)}</div>
+          <div style="font-size:30px; font-weight:800; margin-top:4px;">&#2547; ${bal.toFixed(2)}</div>
         </div>
-        <span style="font-size:26px;">&#128091;</span>
+        <span style="font-size:28px;">&#128091;</span>
       </div>
 
       <div style="font-weight:700; font-size:13px; margin-bottom:8px;">Collection Address</div>
@@ -460,40 +380,30 @@ function renderActivePanel() {
         <span style="color:#16a34a; font-weight:800; font-size:18px;">&#10003;</span>
       </div>
 
-      <form id="payOutSubmitForm">
+      <form id="pagePayOutForm">
         <label style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;">Pay Out Amount</label>
-        <input type="number" id="payOutAmtField" class="input" step="0.01" min="1" required placeholder="&#2547; Enter amount" style="margin-bottom:14px;" />
-
+        <input type="number" id="pagePayOutAmt" class="input" step="0.01" min="1" required placeholder="&#2547; Enter amount" style="margin-bottom:14px;" />
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px; font-size:12px; color:#475569; margin-bottom:16px;">
           <div style="font-weight:700; margin-bottom:4px;">Rules : Minimum Pay Out &#2547;500</div>
-          <div style="font-weight:700;">Tips:</div>
-          <p>Please bind in the correct bank account information. If the Pay Out is successful but the bank account details are wrong, platform will not be responsible.</p>
+          <p>Please bind in the correct bank account information. Double-check details before submitting.</p>
         </div>
-
-        <button type="submit" style="width:100%; background:#090b10; color:#fff; border:none; border-radius:8px; padding:14px; font-size:15px; font-weight:700; cursor:pointer;">
-          Pay Out
-        </button>
+        <button type="submit" style="width:100%; background:#090b10; color:#fff; border:none; border-radius:8px; padding:15px; font-size:15px; font-weight:700; cursor:pointer;">Pay Out</button>
       </form>
+      <button type="button" class="btn btn-outline" id="backToQueueBtn" style="width:100%; margin-top:12px;">Back to Snatch Queue</button>
     `;
 
-    document.getElementById("closePayOutBtn")?.addEventListener("click", () => closePanel("payOutPanel"));
-    document.getElementById("payOutSubmitForm")?.addEventListener("submit", (e) => {
+    document.getElementById("backToQueueBtn")?.addEventListener("click", () => switchToSnatchPage("queue"));
+    document.getElementById("pagePayOutForm")?.addEventListener("submit", (e) => {
       e.preventDefault();
-      const amt = Number(document.getElementById("payOutAmtField").value || 0);
-      if (amt < 500) {
-        showToast("Minimum Pay Out is ৳500.");
-        return;
-      }
-      if (amt > Number(state.session.balance || 0)) {
-        showToast("Insufficient Wallet Funds.");
-        return;
-      }
+      const amt = Number(document.getElementById("pagePayOutAmt").value || 0);
+      if (amt < 500) return showToast("Minimum Pay Out is ৳500.");
+      if (amt > Number(state.session.balance || 0)) return showToast("Insufficient Wallet Funds.");
       state.session.balance = Number(state.session.balance) - amt;
       state.outOfFunds = Number(state.outOfFunds || 0) + amt;
       addHistory(`Pay Out ৳${amt.toFixed(2)}`);
       saveLocal();
       renderTopAndDrawer();
-      renderActivePanel();
+      renderSnatchDedicatedPage();
       showToast(`Pay Out request for ৳${amt.toFixed(2)} submitted.`);
       push(ref(db, "payouts"), {
         fullPhone: state.session.fullPhone || "member",
@@ -503,72 +413,167 @@ function renderActivePanel() {
         createdAt: new Date().toISOString()
       }).catch(() => {});
     });
+    return;
   }
 
-  if (state.activePanel === "contactPanel") {
-    const panel = document.getElementById("contactPanel");
-    if (!panel) return;
+  if (state.snatchSubMode === "contact") {
     const cleanWa = String(state.supportConfig.whatsappNumber || "").replace(/\D/g, "");
     const tgUrl = state.supportConfig.telegramUrl || "https://t.me/royalsunstone_support";
 
-    panel.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <span style="font-size:12px; color:#6b7280;">Home &gt; Contact Us</span>
-        <button type="button" class="btn btn-outline" id="closeContactBtn">&times; Close</button>
-      </div>
-
-      <div style="position:relative; border-radius:10px; overflow:hidden; min-height:210px; display:grid; place-items:center; text-align:center; color:#fff; background:linear-gradient(rgba(30,27,24,0.58),rgba(30,27,24,0.68)), url('${state.products[3]?.image || FALLBACK_IMG}') center/cover; padding:24px; margin-bottom:18px;">
-        <div style="background:rgba(120,118,115,0.72); border-radius:12px; padding:18px 22px; max-width:500px;">
-          <h2 style="font-size:24px; font-weight:800; margin-bottom:6px;">Royal Sunstone Help Center</h2>
-          <p style="font-size:13px;">Our jewellery pieces are more than an accessory—they are an expression of identity, emotion, and timeless elegance.</p>
+    body.innerHTML = `
+      <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">Snatch Orders &gt; Contact Us</div>
+      <div style="position:relative; border-radius:10px; overflow:hidden; min-height:200px; display:grid; place-items:center; text-align:center; color:#fff; background:linear-gradient(rgba(30,27,24,0.58),rgba(30,27,24,0.68)), url('${state.products[3]?.image || FALLBACK_IMG}') center/cover; padding:22px; margin-bottom:18px;">
+        <div style="background:rgba(120,118,115,0.72); border-radius:12px; padding:16px 20px; max-width:480px;">
+          <h2 style="font-size:22px; font-weight:800; margin-bottom:6px;">Royal Sunstone Help Center</h2>
+          <p style="font-size:13px;">Reach our official Telegram and WhatsApp support channels configured in Control Panel.</p>
         </div>
       </div>
 
       <h3 style="font-size:17px; font-weight:800; margin-bottom:12px;">Knowledge Base</h3>
-
       <a href="${escapeHtml(tgUrl)}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; background:#fff; border:1px solid #111; border-radius:6px; padding:15px; margin-bottom:12px; font-weight:700;">
         <span style="width:30px; height:30px; border-radius:50%; background:#111; color:#fff; display:inline-grid; place-items:center;">&#9992;</span>
         <span>Telegram</span>
       </a>
-
       <a href="https://wa.me/${escapeHtml(cleanWa)}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; background:#fff; border:1px solid #111; border-radius:6px; padding:15px; font-weight:700;">
         <span style="width:30px; height:30px; border-radius:50%; background:#111; color:#fff; display:inline-grid; place-items:center;">&#9742;</span>
         <span>WhatsApp</span>
       </a>
+      <button type="button" class="btn btn-outline" id="backToQueueBtn" style="width:100%; margin-top:14px;">Back to Snatch Queue</button>
     `;
-
-    document.getElementById("closeContactBtn")?.addEventListener("click", () => closePanel("contactPanel"));
+    document.getElementById("backToQueueBtn")?.addEventListener("click", () => switchToSnatchPage("queue"));
+    return;
   }
+
+  /* Default Snatch Queue View */
+  const nextStep = Math.min(TOTAL_SNATCH_ITEMS, state.completedStep + 1);
+  const visibleItems = state.queue25.slice(0, 5);
+
+  body.innerHTML = `
+    <div style="font-size:12px; color:#6b7280; margin-bottom:6px;">Home &gt; Snatch Orders</div>
+    <h1 style="font-size:28px; font-weight:800; color:#111827; margin-bottom:14px;">Royal Sunstone Order</h1>
+
+    <div class="tab-strip">
+      <button type="button" class="tab-btn ${state.snatchTab === "collection" ? "active" : ""}" id="sTabCol">
+        Collection (25)
+      </button>
+      <button type="button" class="tab-btn ${state.snatchTab === "description" ? "active" : ""}" id="sTabDesc">
+        Description
+      </button>
+    </div>
+
+    <div>
+      ${visibleItems
+        .map(
+          (item) => `
+            <div class="queue-row">
+              <div class="queue-left">
+                <span class="queue-num">${item.queueIndex}</span>
+                <img
+                  src="${item.image || FALLBACK_IMG}"
+                  alt="${escapeHtml(item.name)}"
+                  class="queue-thumb"
+                  onerror="this.onerror=null;this.src='${FALLBACK_IMG}';"
+                />
+                <div>
+                  <div style="font-weight:700; font-size:14px; color:#111827;">${escapeHtml(item.name)}</div>
+                  <div style="font-size:12px; color:#4b5563; margin-top:3px;">
+                    &#9733; ${escapeHtml(item.reviews)} &bull; $${Number(item.price).toFixed(2)}
+                    ${item.queueIndex <= state.completedStep ? ` &bull; <strong style="color:#15803d;">Confirmed</strong>` : ""}
+                  </div>
+                </div>
+              </div>
+              <span style="font-size:20px; color:#6b7280;">&rsaquo;</span>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+
+    <div style="padding:12px 6px; font-size:12px; color:#4b5563; background:#f9fafb; border-bottom:1px solid #eceef2;">
+      Queue progress: <strong>${state.completedStep} / ${TOTAL_SNATCH_ITEMS}</strong> confirmed. Tap <strong>Start ${nextStep} / 25</strong> to run animation &amp; confirm.
+    </div>
+
+    <div class="action-pair">
+      <button type="button" class="btn btn-purple" id="sAccBtn">Account Details</button>
+      <button type="button" class="btn btn-purple" id="sRecBtn">Order Record</button>
+    </div>
+
+    <button
+      type="button"
+      class="start-batch-btn"
+      id="sStartBtn"
+      ${state.completedStep >= TOTAL_SNATCH_ITEMS || state.isProcessingOrder ? "disabled" : ""}
+    >
+      ${state.completedStep >= TOTAL_SNATCH_ITEMS ? "Completed 25 / 25" : `Start ${nextStep} / ${TOTAL_SNATCH_ITEMS}`}
+    </button>
+  `;
+
+  document.getElementById("sTabCol")?.addEventListener("click", () => {
+    state.snatchTab = "collection";
+    renderSnatchDedicatedPage();
+  });
+  document.getElementById("sTabDesc")?.addEventListener("click", () => {
+    state.snatchTab = "description";
+    renderSnatchDedicatedPage();
+    showToast("Showing 25-item jewelry order queue.");
+  });
+  document.getElementById("sAccBtn")?.addEventListener("click", openAccountDetailsModal);
+  document.getElementById("sRecBtn")?.addEventListener("click", openOrderRecordModal);
+  document.getElementById("sStartBtn")?.addEventListener("click", runAnimatedOrderConfirmation);
 }
 
-function handleNextSnatchStep() {
+/* Two-stage animation (Image 1 Digging Order -> Image 2 Luxury Splash -> Confirm) */
+function runAnimatedOrderConfirmation() {
   if (!state.session.loggedIn) {
     openPhoneAuthModal();
     return;
   }
-  if (state.completedStep >= TOTAL_SNATCH_ITEMS) return;
+  if (state.isProcessingOrder || state.completedStep >= TOTAL_SNATCH_ITEMS) return;
 
-  const nextStep = state.completedStep + 1;
-  const item = state.queue25[nextStep - 1] || DEFAULT_PRODUCTS[0];
-  state.completedStep = nextStep;
-  state.session.balance = Number(state.session.balance || 0) + Number(item.reward || 15);
-  state.dailyProfit = Number(state.dailyProfit || 0) + Number(item.reward || 15);
+  state.isProcessingOrder = true;
+  renderSnatchDedicatedPage();
 
-  const ord = {
-    step: nextStep,
-    itemName: item.name,
-    price: Number(item.price || 450),
-    reward: Number(item.reward || 15),
-    fullPhone: state.session.fullPhone,
-    createdAt: new Date().toISOString()
-  };
-  state.orders.unshift(ord);
-  addHistory(`Order ${nextStep}/25 (+৳${ord.reward.toFixed(2)})`);
-  saveLocal();
-  renderTopAndDrawer();
-  renderActivePanel();
-  showToast(`Order ${nextStep} / 25 completed`);
-  push(ref(db, "orders"), ord).catch(() => {});
+  const diggingEl = document.getElementById("diggingOverlay");
+  const splashEl = document.getElementById("luxurySplashOverlay");
+
+  diggingEl?.classList.add("open");
+
+  setTimeout(() => {
+    diggingEl?.classList.remove("open");
+    splashEl?.classList.add("open");
+
+    setTimeout(() => {
+      splashEl?.classList.remove("open");
+
+      const nextStep = state.completedStep + 1;
+      const item = state.queue25[nextStep - 1] || DEFAULT_PRODUCTS[0];
+      const rewardAmt = Number(item.reward || 15);
+
+      state.completedStep = nextStep;
+      state.session.balance = Number(state.session.balance || 0) + rewardAmt;
+      state.dailyProfit = Number(state.dailyProfit || 0) + rewardAmt;
+
+      const ord = {
+        step: nextStep,
+        itemName: item.name,
+        price: Number(item.price || 450),
+        reward: rewardAmt,
+        fullPhone: state.session.fullPhone,
+        status: "Confirmed",
+        createdAt: new Date().toISOString()
+      };
+      state.orders.unshift(ord);
+      addHistory(`Confirmed #${nextStep}/25 (+৳${rewardAmt.toFixed(2)})`);
+
+      state.isProcessingOrder = false;
+      saveLocal();
+      renderTopAndDrawer();
+      renderSnatchDedicatedPage();
+      showToast(`Order ${nextStep} / 25 Confirmed! (+৳${rewardAmt.toFixed(2)})`);
+
+      push(ref(db, "orders"), ord).catch(() => {});
+    }, 1300);
+  }, 1200);
 }
 
 function openModal(html) {
@@ -601,10 +606,8 @@ function openPhoneAuthModal() {
           </select>
           <input type="tel" id="mLoginPhone" required placeholder="1XXXXXXXXX" style="border:none; padding:10px 12px; font-size:14px; outline:none;" />
         </div>
-
         <label style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;">Password</label>
         <input type="password" id="mLoginPass" class="input" required placeholder="Password" style="margin-bottom:14px;" />
-
         <button type="submit" class="btn btn-navy" style="width:100%; padding:13px; font-size:15px;">Sign In</button>
       </form>
 
@@ -626,55 +629,51 @@ function openPhoneAuthModal() {
     </div>
   `);
 
-  document.getElementById("mLoginForm")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const code = document.getElementById("mLoginCode").value;
-    const phone = document.getElementById("mLoginPhone").value;
-    const pass = document.getElementById("mLoginPass").value;
+  const finishAuth = (code, phone, pass, isReg) => {
     const fullPhone = buildFullPhone(code, phone);
     if (!fullPhone || !pass) return;
-
     const acc = state.registeredAccounts[fullPhone];
-    if (acc && acc.password !== pass) {
+    if (!isReg && acc && acc.password !== pass) {
       showToast("Incorrect password.");
       return;
     }
-
+    state.registeredAccounts[fullPhone] = {
+      fullPhone,
+      password: pass,
+      balance: acc?.balance ?? state.session.balance
+    };
     state.session.loggedIn = true;
     state.session.countryCode = code;
     state.session.phone = normalizePhone(phone);
     state.session.fullPhone = fullPhone;
-    state.session.balance = acc?.balance ?? state.session.balance;
-    if (!acc) state.registeredAccounts[fullPhone] = { fullPhone, password: pass, balance: state.session.balance };
+    state.session.balance = state.registeredAccounts[fullPhone].balance;
 
-    addHistory(`Login: ${fullPhone}`);
+    addHistory(`${isReg ? "Register" : "Login"}: ${fullPhone}`);
     saveLocal();
     renderTopAndDrawer();
     closeModal();
-    openPanel("snatchPanel");
-    showToast(`Logged in as ${fullPhone}`);
+    switchToSnatchPage("queue");
+    showToast(`Welcome ${fullPhone}`);
+  };
+
+  document.getElementById("mLoginForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    finishAuth(
+      document.getElementById("mLoginCode").value,
+      document.getElementById("mLoginPhone").value,
+      document.getElementById("mLoginPass").value,
+      false
+    );
   });
 
   document.getElementById("mRegForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
-    const code = document.getElementById("mRegCode").value;
-    const phone = document.getElementById("mRegPhone").value;
-    const pass = document.getElementById("mRegPass").value;
-    const fullPhone = buildFullPhone(code, phone);
-    if (!fullPhone || pass.length < 6) return;
-
-    state.registeredAccounts[fullPhone] = { fullPhone, password: pass, balance: state.session.balance };
-    state.session.loggedIn = true;
-    state.session.countryCode = code;
-    state.session.phone = normalizePhone(phone);
-    state.session.fullPhone = fullPhone;
-
-    addHistory(`Register: ${fullPhone}`);
-    saveLocal();
-    renderTopAndDrawer();
-    closeModal();
-    openPanel("snatchPanel");
-    showToast(`Registered ${fullPhone}`);
+    finishAuth(
+      document.getElementById("mRegCode").value,
+      document.getElementById("mRegPhone").value,
+      document.getElementById("mRegPass").value,
+      true
+    );
   });
 }
 
@@ -721,7 +720,7 @@ function openOrderRecordModal() {
           (o) => `
             <div style="border:1px solid #e5e7eb; border-radius:8px; padding:10px; margin-bottom:8px; background:#faf8f5;">
               <div style="font-weight:700; font-size:13px;">#${escapeHtml(o.step)} ${escapeHtml(o.itemName)}</div>
-              <div style="font-size:12px; color:#4b5563;">Reward: +৳${Number(o.reward).toFixed(2)} &bull; $${Number(o.price).toFixed(2)}</div>
+              <div style="font-size:12px; color:#4b5563;">Confirmed &bull; Reward: +৳${Number(o.reward).toFixed(2)} &bull; $${Number(o.price).toFixed(2)}</div>
             </div>
           `
         )
@@ -759,12 +758,12 @@ function bindEvents() {
   };
 
   document.getElementById("menu3LineBtn")?.addEventListener("click", openDrawer);
+  document.getElementById("snatchPageMenuBtn")?.addEventListener("click", openDrawer);
   document.getElementById("closeDrawerBtn")?.addEventListener("click", closeDrawer);
   backdrop?.addEventListener("click", closeDrawer);
 
-  document.getElementById("brandHomeBtn")?.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
+  document.getElementById("backToStoreBtn")?.addEventListener("click", switchToMainPage);
+  document.getElementById("brandHomeBtn")?.addEventListener("click", switchToMainPage);
 
   document.getElementById("heroShopNowBtn")?.addEventListener("click", () => {
     document.getElementById("craftedSection")?.scrollIntoView({ behavior: "smooth" });
@@ -815,8 +814,7 @@ function bindEvents() {
   document.getElementById("topAuthBtn")?.addEventListener("click", () => {
     if (state.session.loggedIn) {
       state.session.loggedIn = false;
-      closePanel("snatchPanel");
-      closePanel("payOutPanel");
+      switchToMainPage();
       saveLocal();
       renderTopAndDrawer();
       showToast("Logged out.");
@@ -825,26 +823,26 @@ function bindEvents() {
     }
   });
 
-  document.getElementById("topSnatchBtn")?.addEventListener("click", () => requireLogin(() => openPanel("snatchPanel")));
-  document.getElementById("navSnatchOrdersBtn")?.addEventListener("click", () => requireLogin(() => openPanel("snatchPanel")));
-  document.getElementById("footerSnatchLink")?.addEventListener("click", () => requireLogin(() => openPanel("snatchPanel")));
+  document.getElementById("topSnatchBtn")?.addEventListener("click", () => requireLogin(() => switchToSnatchPage("queue")));
+  document.getElementById("navSnatchOrdersBtn")?.addEventListener("click", () => requireLogin(() => switchToSnatchPage("queue")));
+  document.getElementById("footerSnatchLink")?.addEventListener("click", () => requireLogin(() => switchToSnatchPage("queue")));
 
-  document.getElementById("headerContactBtn")?.addEventListener("click", () => openPanel("contactPanel"));
-  document.getElementById("navContactUsBtn")?.addEventListener("click", () => openPanel("contactPanel"));
-  document.getElementById("footerContactLink")?.addEventListener("click", () => openPanel("contactPanel"));
+  document.getElementById("headerContactBtn")?.addEventListener("click", () => switchToSnatchPage("contact"));
+  document.getElementById("navContactUsBtn")?.addEventListener("click", () => switchToSnatchPage("contact"));
+  document.getElementById("footerContactLink")?.addEventListener("click", () => switchToSnatchPage("contact"));
 
   /* Drawer actions */
   document.getElementById("drawerBuyInBtn")?.addEventListener("click", () => {
     closeDrawer();
-    requireLogin(() => openPanel("snatchPanel"));
+    requireLogin(() => switchToSnatchPage("queue"));
   });
   document.getElementById("drawerPayOutTile")?.addEventListener("click", () => {
     closeDrawer();
-    requireLogin(() => openPanel("payOutPanel"));
+    requireLogin(() => switchToSnatchPage("payout"));
   });
   document.getElementById("drawerContactTile")?.addEventListener("click", () => {
     closeDrawer();
-    openPanel("contactPanel");
+    switchToSnatchPage("contact");
   });
   document.getElementById("drawerAccountTile")?.addEventListener("click", () => {
     closeDrawer();
@@ -864,7 +862,7 @@ function bindEvents() {
     addHistory(`Bound ${state.session.bindMethod}: ${state.session.bindAddress}`);
     saveLocal();
     renderTopAndDrawer();
-    renderActivePanel();
+    if (state.pageMode === "snatch") renderSnatchDedicatedPage();
     showToast("Collection address saved.");
   });
 
@@ -892,8 +890,7 @@ function bindEvents() {
   document.getElementById("drawerSignOutBtn")?.addEventListener("click", () => {
     closeDrawer();
     state.session.loggedIn = false;
-    closePanel("snatchPanel");
-    closePanel("payOutPanel");
+    switchToMainPage();
     saveLocal();
     renderTopAndDrawer();
     showToast("Signed out.");
@@ -917,7 +914,7 @@ export function renderAllViews() {
   bindEvents();
   renderTopAndDrawer();
   renderMainSections();
-  if (state.activePanel) renderActivePanel();
+  if (state.pageMode === "snatch") renderSnatchDedicatedPage();
 }
 
 export function initChatListener() {}
@@ -932,7 +929,9 @@ export function initFirebaseSync() {
         whatsappNumber: cfg.whatsappNumber || state.supportConfig.whatsappNumber
       };
       saveLocal();
-      if (state.activePanel === "contactPanel") renderActivePanel();
+      if (state.pageMode === "snatch" && state.snatchSubMode === "contact") {
+        renderSnatchDedicatedPage();
+      }
     });
 
     onValue(ref(db, "products"), (snap) => {
@@ -946,7 +945,7 @@ export function initFirebaseSync() {
         state.queue25 = build25Queue(state.products);
         saveLocal();
         renderMainSections();
-        if (state.activePanel === "snatchPanel") renderActivePanel();
+        if (state.pageMode === "snatch") renderSnatchDedicatedPage();
       }
     });
   } catch (_) {}
