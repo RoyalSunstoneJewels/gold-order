@@ -1089,3 +1089,422 @@ export function initFirebaseSync() {
     });
   } catch (_) {}
 }
+function openModal(html) {
+  const backdrop = document.getElementById("appModal");
+  const box = document.getElementById("modalBox");
+  if (!backdrop || !box) return;
+  box.innerHTML = html;
+  backdrop.classList.add("open");
+  document.getElementById("modalCloseX")?.addEventListener("click", closeModal);
+}
+
+function closeModal() {
+  document.getElementById("appModal")?.classList.remove("open");
+}
+
+function openPhoneAuthModal() {
+  openModal(`
+    <div style="padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:21px; font-weight:800;">Login</h3>
+      <button type="button" id="modalCloseX" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+    </div>
+    <div style="padding:20px 22px;">
+      <form id="mLoginForm">
+        <label style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;">Phone</label>
+        <div style="display:grid; grid-template-columns:120px 1fr; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:14px;">
+          <select id="mLoginCode" style="background:#0b1628; color:#fff; border:none; padding:10px; font-weight:700;">
+            <option value="+880" selected>BAN (+880)</option>
+            <option value="+91">IND (+91)</option>
+            <option value="+1">USA (+1)</option>
+          </select>
+          <input type="tel" id="mLoginPhone" required placeholder="1XXXXXXXXX" style="border:none; padding:10px 12px; font-size:14px; outline:none;" />
+        </div>
+        <label style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;">Password</label>
+        <input type="password" id="mLoginPass" class="input" required placeholder="Password" style="margin-bottom:14px;" />
+        <button type="submit" class="btn btn-navy" style="width:100%; padding:13px; font-size:15px;">Sign In</button>
+      </form>
+
+      <div style="border-top:1px solid #e5e7eb; margin-top:18px; padding-top:16px;">
+        <div style="font-weight:700; font-size:14px; margin-bottom:8px;">Don't have an account? Register</div>
+        <form id="mRegForm">
+          <div style="display:grid; grid-template-columns:120px 1fr; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:10px;">
+            <select id="mRegCode" style="background:#0b1628; color:#fff; border:none; padding:10px; font-weight:700;">
+              <option value="+880" selected>BAN (+880)</option>
+              <option value="+91">IND (+91)</option>
+              <option value="+1">USA (+1)</option>
+            </select>
+            <input type="tel" id="mRegPhone" required placeholder="1XXXXXXXXX" style="border:none; padding:10px 12px; font-size:14px; outline:none;" />
+          </div>
+          <input type="password" id="mRegPass" class="input" required minlength="6" placeholder="Create password (6+ chars)" style="margin-bottom:10px;" />
+          <button type="submit" class="btn btn-outline" style="width:100%; padding:11px;">Register</button>
+        </form>
+      </div>
+    </div>
+  `);
+
+  const finishAuth = (code, phone, pass, isReg) => {
+    const fullPhone = buildFullPhone(code, phone);
+    if (!fullPhone || !pass) return;
+    const acc = state.registeredAccounts[fullPhone];
+    if (!isReg && acc && acc.password !== pass) {
+      showToast("Incorrect password.");
+      return;
+    }
+
+    const nextBalance = isReg ? 0 : roundMoney(acc?.balance ?? state.session.balance);
+
+    state.registeredAccounts[fullPhone] = {
+      fullPhone,
+      password: pass,
+      balance: nextBalance
+    };
+
+    if (isReg) {
+      state.completedStep = 0;
+      state.dailyProfit = 0;
+      state.outOfFunds = 0;
+      state.orders = [];
+      state.history = [];
+    }
+
+    state.session.loggedIn = true;
+    state.session.countryCode = code;
+    state.session.phone = normalizePhone(phone);
+    state.session.fullPhone = fullPhone;
+    state.session.balance = nextBalance;
+
+    applyUserOrderAssignment();
+    addHistory(`${isReg ? "Register" : "Login"}: ${fullPhone}`);
+    saveLocal();
+    renderTopAndDrawer();
+    closeModal();
+
+    if (isReg) {
+      switchToMainPage();
+      showToast(`Registered ${fullPhone}. Welcome to Royal Sunstone.`);
+    } else {
+      switchToSnatchPage("queue");
+      showToast(`Welcome ${fullPhone}`);
+    }
+  };
+
+  document.getElementById("mLoginForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    finishAuth(
+      document.getElementById("mLoginCode").value,
+      document.getElementById("mLoginPhone").value,
+      document.getElementById("mLoginPass").value,
+      false
+    );
+  });
+
+  document.getElementById("mRegForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    finishAuth(
+      document.getElementById("mRegCode").value,
+      document.getElementById("mRegPhone").value,
+      document.getElementById("mRegPass").value,
+      true
+    );
+  });
+}
+
+function openAccountDetailsModal() {
+  const bal = roundMoney(state.session.balance || 0);
+  const profit = roundMoney(state.dailyProfit || 0);
+  const outAmt = roundMoney(state.outOfFunds || 0);
+  const creditAmt = roundMoney(state.testCredit || 10000);
+
+  openModal(`
+    <div style="background:#cbd5e1; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:19px; font-weight:700; margin:0 auto;">Account Details</h3>
+      <button type="button" id="modalCloseX" style="background:none; border:none; font-size:22px; cursor:pointer;">&times;</button>
+    </div>
+    <div style="padding:22px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px 24px; margin-bottom:22px;">
+        <div>
+          <div style="font-size:12px; color:#4b5563;">Available Balance</div>
+          <div style="font-size:17px; font-weight:700;">${bal.toFixed(2)}</div>
+        </div>
+        <div>
+          <div style="font-size:12px; color:#4b5563;">Daily Profit</div>
+          <div style="font-size:17px; font-weight:700;">${profit.toFixed(2)}</div>
+        </div>
+        <div>
+          <div style="font-size:12px; color:#4b5563;">Out of funds</div>
+          <div style="font-size:17px; font-weight:700;">${outAmt.toFixed(2)}</div>
+        </div>
+        <div>
+          <div style="font-size:12px; color:#4b5563;">Current Digging Order</div>
+          <div style="font-size:17px; font-weight:700;">${state.completedStep} / ${state.targetCount}</div>
+        </div>
+        <div>
+          <div style="font-size:12px; color:#4b5563;">Test Credit</div>
+          <div style="font-size:17px; font-weight:700;">${creditAmt.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-navy" id="accCloseBtn" style="width:100%; padding:13px; font-size:15px;">Close</button>
+    </div>
+  `);
+  document.getElementById("accCloseBtn")?.addEventListener("click", closeModal);
+}
+
+function openOrderRecordModal() {
+  const rows = state.orders.length
+    ? state.orders
+        .map(
+          (o) => `
+            <div style="border:1px solid #e5e7eb; border-radius:8px; padding:10px; margin-bottom:8px; background:#faf8f5;">
+              <div style="font-weight:700; font-size:13px;">#${escapeHtml(o.step)} ${escapeHtml(o.itemName)}</div>
+              <div style="font-size:12px; color:#4b5563;">Confirmed &bull; Profit: +৳${roundMoney(o.reward).toFixed(2)}</div>
+            </div>
+          `
+        )
+        .join("")
+    : `<p style="font-size:13px; color:#6b7280;">No order records yet.</p>`;
+
+  openModal(`
+    <div style="background:#cbd5e1; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:19px; font-weight:700; margin:0 auto;">Order Record</h3>
+      <button type="button" id="modalCloseX" style="background:none; border:none; font-size:22px; cursor:pointer;">&times;</button>
+    </div>
+    <div style="padding:20px; max-height:360px; overflow-y:auto;">
+      ${rows}
+      <button type="button" class="btn btn-navy" id="recCloseBtn" style="width:100%; margin-top:10px;">Close</button>
+    </div>
+  `);
+  document.getElementById("recCloseBtn")?.addEventListener("click", closeModal);
+}
+
+function bindEvents() {
+  if (bindEvents._bound) return;
+  bindEvents._bound = true;
+
+  loadLocal();
+
+  const drawer = document.getElementById("sideDrawer");
+  const backdrop = document.getElementById("drawerBackdrop");
+  const openDrawer = () => {
+    drawer?.classList.add("open");
+    backdrop?.classList.add("open");
+  };
+  const closeDrawer = () => {
+    drawer?.classList.remove("open");
+    backdrop?.classList.remove("open");
+  };
+
+  document.getElementById("menu3LineBtn")?.addEventListener("click", openDrawer);
+  document.getElementById("snatchPageMenuBtn")?.addEventListener("click", openDrawer);
+  document.getElementById("closeDrawerBtn")?.addEventListener("click", closeDrawer);
+  backdrop?.addEventListener("click", closeDrawer);
+
+  document.getElementById("backToStoreBtn")?.addEventListener("click", switchToMainPage);
+  document.getElementById("brandHomeBtn")?.addEventListener("click", switchToMainPage);
+
+  document.getElementById("heroShopNowBtn")?.addEventListener("click", () => {
+    document.getElementById("craftedSection")?.scrollIntoView({ behavior: "smooth" });
+  });
+  document.getElementById("heroScrollDownBtn")?.addEventListener("click", () => {
+    document.getElementById("craftedSection")?.scrollIntoView({ behavior: "smooth" });
+  });
+
+  document.querySelectorAll(".top-cat-nav [data-cat]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.selectedCategory = btn.dataset.cat || "All";
+      renderMainSections();
+      document.getElementById("craftedSection")?.scrollIntoView({ behavior: "smooth" });
+    });
+  });
+
+  document.querySelectorAll("[data-filter-scroll]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.selectedCategory = btn.dataset.filterScroll || "All";
+      renderMainSections();
+      document.getElementById("craftedSection")?.scrollIntoView({ behavior: "smooth" });
+    });
+  });
+
+  document.getElementById("prevSlideBtn")?.addEventListener("click", () => {
+    state.slideIndex = (state.slideIndex - 1 + EXCLUSIVE_SLIDES.length) % EXCLUSIVE_SLIDES.length;
+    renderMainSections();
+  });
+  document.getElementById("nextSlideBtn")?.addEventListener("click", () => {
+    state.slideIndex = (state.slideIndex + 1) % EXCLUSIVE_SLIDES.length;
+    renderMainSections();
+  });
+  document.querySelectorAll(".carousel-dot").forEach((dot) => {
+    dot.addEventListener("click", () => {
+      state.slideIndex = Number(dot.dataset.slide || 0);
+      renderMainSections();
+    });
+  });
+
+  const requireLogin = (fn) => {
+    if (!state.session.loggedIn) {
+      openPhoneAuthModal();
+      return;
+    }
+    fn();
+  };
+
+  document.getElementById("topAuthBtn")?.addEventListener("click", () => {
+    if (state.session.loggedIn) {
+      state.session.loggedIn = false;
+      switchToMainPage();
+      saveLocal();
+      renderTopAndDrawer();
+      showToast("Logged out.");
+    } else {
+      openPhoneAuthModal();
+    }
+  });
+
+  document.getElementById("topSnatchBtn")?.addEventListener("click", () => requireLogin(() => switchToSnatchPage("queue")));
+  document.getElementById("navSnatchOrdersBtn")?.addEventListener("click", () => requireLogin(() => switchToSnatchPage("queue")));
+  document.getElementById("footerSnatchLink")?.addEventListener("click", () => requireLogin(() => switchToSnatchPage("queue")));
+
+  document.getElementById("headerContactBtn")?.addEventListener("click", () => switchToSnatchPage("contact"));
+  document.getElementById("navContactUsBtn")?.addEventListener("click", () => switchToSnatchPage("contact"));
+  document.getElementById("footerContactLink")?.addEventListener("click", () => switchToSnatchPage("contact"));
+
+  document.getElementById("drawerBuyInBtn")?.addEventListener("click", () => {
+    closeDrawer();
+    requireLogin(() => switchToSnatchPage("queue"));
+  });
+  document.getElementById("drawerPayOutTile")?.addEventListener("click", () => {
+    closeDrawer();
+    requireLogin(() => switchToSnatchPage("payout"));
+  });
+  document.getElementById("drawerContactTile")?.addEventListener("click", () => {
+    closeDrawer();
+    switchToSnatchPage("contact");
+  });
+  document.getElementById("drawerAccountTile")?.addEventListener("click", () => {
+    closeDrawer();
+    requireLogin(() => openAccountDetailsModal());
+  });
+
+  document.querySelectorAll(".menu-row-btn[data-acc]").forEach((row) => {
+    row.addEventListener("click", () => {
+      document.getElementById(`acc-${row.dataset.acc}`)?.classList.toggle("open");
+    });
+  });
+
+  document.getElementById("bindAccountForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    state.session.bindMethod = document.getElementById("bindMethod").value;
+    state.session.bindAddress = document.getElementById("bindAddress").value.trim();
+    addHistory(`Bound ${state.session.bindMethod}: ${state.session.bindAddress}`);
+    saveLocal();
+    renderTopAndDrawer();
+    if (state.pageMode === "snatch") renderSnatchDedicatedPage();
+    showToast("Collection address saved.");
+  });
+
+  document.getElementById("checkInBtn")?.addEventListener("click", () => {
+    state.session.balance = roundMoney(Number(state.session.balance || 0) + 10);
+    addHistory("Check In +৳10.00");
+    saveLocal();
+    renderTopAndDrawer();
+    showToast("Daily check-in claimed (+৳10.00)");
+  });
+
+  document.getElementById("changePassForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const p = document.getElementById("newPassField").value;
+    if (state.session.fullPhone && state.registeredAccounts[state.session.fullPhone]) {
+      state.registeredAccounts[state.session.fullPhone].password = p;
+    }
+    e.target.reset();
+    addHistory("Password changed");
+    saveLocal();
+    showToast("Password updated.");
+  });
+
+  document.getElementById("drawerSignOutBtn")?.addEventListener("click", () => {
+    closeDrawer();
+    state.session.loggedIn = false;
+    switchToMainPage();
+    saveLocal();
+    renderTopAndDrawer();
+    showToast("Signed out.");
+  });
+
+  document.getElementById("newsletterForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("newsletterEmail").value.trim();
+    if (!email) return;
+    e.target.reset();
+    showToast("Subscribed to Royal Sunstone updates.");
+    push(ref(db, "newsletter"), { email, at: new Date().toISOString() }).catch(() => {});
+  });
+
+  document.getElementById("appModal")?.addEventListener("click", (e) => {
+    if (e.target.id === "appModal") closeModal();
+  });
+}
+
+export function renderAllViews() {
+  bindEvents();
+  renderTopAndDrawer();
+  renderMainSections();
+  if (state.pageMode === "snatch") renderSnatchDedicatedPage();
+}
+
+export function initChatListener() {}
+
+export function initFirebaseSync() {
+  try {
+    onValue(ref(db, "support_config"), (snap) => {
+      if (!snap.exists()) return;
+      const cfg = snap.val();
+      state.supportConfig = {
+        telegramUrl: cfg.telegramUrl || state.supportConfig.telegramUrl,
+        whatsappNumber: cfg.whatsappNumber || state.supportConfig.whatsappNumber
+      };
+      saveLocal();
+      if (state.pageMode === "snatch" && state.snatchSubMode === "contact") {
+        renderSnatchDedicatedPage();
+      }
+    });
+
+    onValue(ref(db, "products"), (snap) => {
+      if (!snap.exists()) return;
+      const raw = snap.val();
+      const list = Array.isArray(raw)
+        ? raw.filter(Boolean)
+        : Object.entries(raw).map(([id, item]) => ({ id, ...item }));
+      if (list.length > 0) {
+        state.products = list;
+        applyUserOrderAssignment();
+        saveLocal();
+        renderMainSections();
+        if (state.pageMode === "snatch") renderSnatchDedicatedPage();
+      }
+    });
+
+    onValue(ref(db, "user_order_assignments"), (snap) => {
+      if (!snap.exists()) return;
+      const raw = snap.val();
+      const map = {};
+      Object.entries(raw).forEach(([key, val]) => {
+        if (!val) return;
+        const cleanKey = normalizePhone(val.phone || key);
+        if (cleanKey) {
+          map[cleanKey] = {
+            phone: cleanKey,
+            orderCount: Math.max(1, Number(val.orderCount || DEFAULT_BATCH_COUNT)),
+            totalProfit: roundMoney(val.totalProfit ?? DEFAULT_BATCH_PROFIT),
+            requiredBalance: roundMoney(val.requiredBalance || 0),
+            updatedAt: val.updatedAt || ""
+          };
+        }
+      });
+      state.assignedOrdersMap = map;
+      applyUserOrderAssignment();
+      saveLocal();
+      renderTopAndDrawer();
+      if (state.pageMode === "snatch") renderSnatchDedicatedPage();
+    });
+  } catch (_) {}
+}
