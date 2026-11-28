@@ -1,0 +1,26 @@
+{
+  "rules": {
+    "siteImages": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "orders100": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "chats": {
+      ".read": "auth != null",
+      "$sessionId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "bindRequests": {
+      ".read": "auth != null",
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}

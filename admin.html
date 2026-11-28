@@ -29,7 +29,7 @@
     }
 
     .wrap {
-      max-width: 1140px;
+      max-width: 1120px;
       margin: 0 auto;
     }
 
@@ -57,11 +57,6 @@
 
     .btn-gold {
       background: var(--gold);
-      color: #fff;
-    }
-
-    .btn-navy {
-      background: var(--navy);
       color: #fff;
     }
 
@@ -124,15 +119,6 @@
       background: #faf8f5;
     }
 
-    .calc-preview {
-      background: #faf8f5;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 13px;
-      margin-bottom: 14px;
-    }
-
     .muted {
       color: var(--muted);
       font-size: 13px;
@@ -150,7 +136,7 @@
     <header class="topbar">
       <div>
         <h1 style="font-size:19px;">ROYAL SUNSTONE — CONTROL PANEL</h1>
-        <p style="font-size:12px; color:#e7cfa0;">Assign Orders &amp; Profit, Contact Channels, Products &amp; Pay Outs</p>
+        <p style="font-size:12px; color:#e7cfa0;">Telegram, WhatsApp, Products &amp; Pay Out Requests</p>
       </div>
       <div style="display:flex; gap:10px;">
         <a href="./index.html" class="btn btn-light" style="text-decoration:none;">Storefront</a>
@@ -178,36 +164,6 @@
     <section id="dashboardSection" style="display:none;">
       <div class="dash-grid">
         <div style="display:flex; flex-direction:column; gap:20px;">
-          <!-- Assign Orders & Auto Profit to User -->
-          <div class="panel">
-            <h2 style="margin-bottom:12px;">Assign Orders &amp; Profit to User</h2>
-            <form id="assignOrderForm">
-              <div class="form-group">
-                <label for="targetPhone">Customer Phone (e.g. 8801712345678 or 01712345678)</label>
-                <input type="text" id="targetPhone" class="input" required placeholder="01712345678" />
-              </div>
-              <div class="form-group">
-                <label for="orderCountInput">Number of Orders to Send</label>
-                <input type="number" id="orderCountInput" class="input" required min="1" max="200" value="25" />
-              </div>
-              <div class="form-group">
-                <label for="totalProfitInput">Total Profit to Give (&#2547;)</label>
-                <input type="number" id="totalProfitInput" class="input" required min="0" step="0.01" value="500" />
-              </div>
-              <div class="form-group">
-                <label for="reqBalanceInput">Required Balance per Order (&#2547;, optional — 0 uses item price)</label>
-                <input type="number" id="reqBalanceInput" class="input" min="0" step="0.01" value="500" />
-              </div>
-
-              <div class="calc-preview" id="profitPreviewBox">
-                Per Order Profit: <strong>&#2547;20.00</strong> &times; <strong>25</strong> orders = <strong>&#2547;500.00</strong>
-              </div>
-
-              <button type="submit" class="btn btn-navy" style="width:100%;">Send Orders &amp; Profit</button>
-            </form>
-          </div>
-
-          <!-- Contact Us Channels -->
           <div class="panel">
             <h2 style="margin-bottom:12px;">Contact Us Channels</h2>
             <form id="supportForm">
@@ -223,7 +179,6 @@
             </form>
           </div>
 
-          <!-- Add Jewelry Item -->
           <div class="panel">
             <h2 style="margin-bottom:12px;">Add Jewelry Item</h2>
             <form id="addProdForm">
@@ -245,6 +200,10 @@
                 <input type="number" id="pPrice" class="input" required min="1" step="0.01" value="500" />
               </div>
               <div class="form-group">
+                <label for="pReward">Reward (BDT)</label>
+                <input type="number" id="pReward" class="input" required min="0" step="0.01" value="20" />
+              </div>
+              <div class="form-group">
                 <label for="pImg">Image Path (optional)</label>
                 <input type="text" id="pImg" class="input" placeholder="./images/ring-1.jpg" />
               </div>
@@ -258,11 +217,6 @@
         </div>
 
         <div style="display:flex; flex-direction:column; gap:20px;">
-          <div class="panel">
-            <h2 style="margin-bottom:12px;">Assigned User Orders</h2>
-            <div id="assignedUsersBox"></div>
-          </div>
-
           <div class="panel">
             <h2 style="margin-bottom:12px;">Pay Out Requests</h2>
             <div id="payoutsBox"></div>
@@ -305,21 +259,6 @@
         .replaceAll('"', "&quot;");
     }
 
-    function normalizePhone(raw) {
-      return String(raw || "").replace(/\D/g, "").replace(/^0+/, "");
-    }
-
-    function updateProfitPreview() {
-      const cnt = Math.max(1, Number(document.getElementById("orderCountInput").value || 1));
-      const prof = Number(document.getElementById("totalProfitInput").value || 0);
-      const per = Math.round(((prof / cnt) + Number.EPSILON) * 100) / 100;
-      document.getElementById("profitPreviewBox").innerHTML =
-        `Per Order Profit: <strong>&#2547;${per.toFixed(2)}</strong> &times; <strong>${cnt}</strong> orders = <strong>&#2547;${prof.toFixed(2)}</strong>`;
-    }
-
-    document.getElementById("orderCountInput").addEventListener("input", updateProfitPreview);
-    document.getElementById("totalProfitInput").addEventListener("input", updateProfitPreview);
-
     document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       loginError.textContent = "";
@@ -341,33 +280,12 @@
         loginSection.style.display = "none";
         dashboardSection.style.display = "block";
         logoutBtn.style.display = "inline-block";
-        updateProfitPreview();
         startSync();
       } else {
         loginSection.style.display = "block";
         dashboardSection.style.display = "none";
         logoutBtn.style.display = "none";
       }
-    });
-
-    document.getElementById("assignOrderForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const phoneKey = normalizePhone(document.getElementById("targetPhone").value);
-      const orderCount = Math.max(1, Number(document.getElementById("orderCountInput").value || 25));
-      const totalProfit = Number(document.getElementById("totalProfitInput").value || 0);
-      const requiredBalance = Number(document.getElementById("reqBalanceInput").value || 0);
-
-      if (!phoneKey) return alert("Enter a valid phone number.");
-
-      await set(ref(db, `user_order_assignments/${phoneKey}`), {
-        phone: phoneKey,
-        orderCount,
-        totalProfit,
-        requiredBalance,
-        updatedAt: new Date().toISOString()
-      });
-
-      alert(`Sent ${orderCount} orders with ৳${totalProfit.toFixed(2)} profit to ${phoneKey}!`);
     });
 
     document.getElementById("supportForm").addEventListener("submit", async (e) => {
@@ -384,89 +302,4 @@
         name: document.getElementById("pName").value.trim(),
         category: document.getElementById("pCat").value,
         price: Number(document.getElementById("pPrice").value || 0),
-        image: document.getElementById("pImg").value.trim(),
-        description: document.getElementById("pDesc").value.trim()
-      });
-      e.target.reset();
-      alert("Item published!");
-    });
-
-    function startSync() {
-      onValue(ref(db, "user_order_assignments"), (snap) => {
-        const box = document.getElementById("assignedUsersBox");
-        if (!snap.exists()) {
-          box.innerHTML = `<p class="muted">No user order assignments yet.</p>`;
-          return;
-        }
-        box.innerHTML = Object.entries(snap.val())
-          .map(([key, item]) => {
-            const cnt = Number(item.orderCount || 25);
-            const prof = Number(item.totalProfit || 0);
-            const per = (prof / Math.max(1, cnt)).toFixed(2);
-            return `
-              <div class="item-row">
-                <div>
-                  <strong>+${esc(key)}</strong>
-                  <div class="muted">${cnt} Orders &bull; Total Profit: &#2547;${prof.toFixed(2)} (&#2547;${per}/order) &bull; Req Bal: &#2547;${Number(item.requiredBalance || 0).toFixed(2)}</div>
-                </div>
-                <button class="btn btn-maroon" data-del-assign="${esc(key)}">Remove</button>
-              </div>
-            `;
-          })
-          .join("");
-        box.querySelectorAll("[data-del-assign]").forEach((b) =>
-          b.addEventListener("click", () => remove(ref(db, `user_order_assignments/${b.dataset.delAssign}`)))
-        );
-      });
-
-      onValue(ref(db, "support_config"), (snap) => {
-        if (!snap.exists()) return;
-        const c = snap.val();
-        if (c.telegramUrl) document.getElementById("tgInput").value = c.telegramUrl;
-        if (c.whatsappNumber) document.getElementById("waInput").value = c.whatsappNumber;
-      });
-
-      onValue(ref(db, "products"), (snap) => {
-        const box = document.getElementById("prodsBox");
-        if (!snap.exists()) {
-          box.innerHTML = `<p class="muted">No products yet.</p>`;
-          return;
-        }
-        box.innerHTML = Object.entries(snap.val())
-          .map(
-            ([id, p]) => `
-              <div class="item-row">
-                <div><strong>${esc(p.name)}</strong><div class="muted">${esc(p.category)} &bull; $${Number(p.price).toFixed(2)}</div></div>
-                <button class="btn btn-maroon" data-del="${esc(id)}">Delete</button>
-              </div>
-            `
-          )
-          .join("");
-        box.querySelectorAll("[data-del]").forEach((b) =>
-          b.addEventListener("click", () => remove(ref(db, `products/${b.dataset.del}`)))
-        );
-      });
-
-      onValue(ref(db, "payouts"), (snap) => {
-        const box = document.getElementById("payoutsBox");
-        if (!snap.exists()) {
-          box.innerHTML = `<p class="muted">No payout requests yet.</p>`;
-          return;
-        }
-        box.innerHTML = Object.values(snap.val())
-          .reverse()
-          .slice(0, 12)
-          .map(
-            (r) => `
-              <div class="item-row">
-                <div><strong>&#2547;${Number(r.amount || 0).toFixed(2)}</strong><div class="muted">${esc(r.fullPhone)} &bull; ${esc(r.method)}: ${esc(r.address)}</div></div>
-                <span class="muted">Pending</span>
-              </div>
-            `
-          )
-          .join("");
-      });
-    }
-  </script>
-</body>
-</html>
+        reward: Number(

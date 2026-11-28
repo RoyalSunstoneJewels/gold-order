@@ -40,10 +40,7 @@
       text-decoration: none;
     }
 
-    #mainStorefrontView.hidden-page {
-      display: none;
-    }
-
+    /* Top Utility & Header */
     .top-utility {
       background: #fff;
       border-bottom: 1px solid var(--line);
@@ -59,7 +56,7 @@
     .util-left, .util-right {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
@@ -125,6 +122,14 @@
       text-transform: uppercase;
     }
 
+    .header-right-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 12px;
+    }
+
     .top-cat-nav {
       margin-top: 12px;
       padding-top: 10px;
@@ -156,12 +161,19 @@
       color: var(--gold);
     }
 
+    /* Hero Banner matching Image 1 */
     .bf-hero {
       position: relative;
       background: radial-gradient(circle at 65% 40%, #2c2419 0%, #090909 70%);
       color: #fff;
       padding: 64px 24px 54px;
       text-align: center;
+      overflow: hidden;
+    }
+
+    .bf-hero-inner {
+      max-width: 1120px;
+      margin: 0 auto;
     }
 
     .bf-title-top {
@@ -203,7 +215,6 @@
     }
 
     .bf-jewel-tag {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: clamp(22px, 3.5vw, 38px);
       font-weight: 800;
       letter-spacing: 5px;
@@ -234,6 +245,7 @@
       cursor: pointer;
     }
 
+    /* Sections */
     .section-wrap {
       max-width: 1200px;
       margin: 0 auto;
@@ -259,6 +271,7 @@
       color: var(--muted);
     }
 
+    /* 3-Card Showcase Grid (Image 1 bottom) */
     .three-cards-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -269,6 +282,8 @@
       background: var(--soft);
       border: 1px solid var(--line);
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .showcase-tile-img {
@@ -283,6 +298,19 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
+    .showcase-tile-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .showcase-tile-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* 2-Column Collection & Creative Studio (Image 2 top) */
     .two-feature-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -337,6 +365,7 @@
       cursor: pointer;
     }
 
+    /* Exclusive Collections Carousel (Image 2 & 3) */
     .exclusive-band {
       background: #f6f7f9;
       padding: 52px 24px;
@@ -428,6 +457,7 @@
       cursor: pointer;
     }
 
+    /* World of Royal Sunstone Editorial Blocks (Image 3 bottom & Image 4) */
     .editorial-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -469,314 +499,23 @@
       background: #ece7de;
     }
 
-    #snatchDedicatedPage {
+    /* Dynamic Feature Panel (Snatch Orders / Pay Out / Contact Us) */
+    .dynamic-panel {
       display: none;
-      min-height: 100vh;
-      background: #ffffff;
+      max-width: 1040px;
+      margin: 24px auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      padding: 26px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    #snatchDedicatedPage.active {
+    .dynamic-panel.active {
       display: block;
     }
 
-    .snatch-page-topbar {
-      background: #fff;
-      border-bottom: 1px solid #e5e7eb;
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      position: sticky;
-      top: 0;
-      z-index: 45;
-    }
-
-    .snatch-page-container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 20px 18px 48px;
-    }
-
-    .tab-strip {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      border-bottom: 1px solid #e5e7eb;
-      margin-bottom: 6px;
-    }
-
-    .tab-btn {
-      background: none;
-      border: none;
-      padding: 14px 10px;
-      font-size: 15px;
-      font-weight: 700;
-      color: #4b5563;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-    }
-
-    .tab-btn.active {
-      color: #111827;
-      border-bottom-color: #111827;
-    }
-
-    .queue-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 16px 6px;
-      border-bottom: 1px solid #eceef2;
-    }
-
-    .queue-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .queue-num {
-      font-size: 18px;
-      font-weight: 800;
-      color: #111827;
-      width: 24px;
-      text-align: center;
-    }
-
-    .queue-thumb {
-      width: 64px;
-      height: 64px;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
-    }
-
-    .balance-warning-box {
-      background: #fef2f2;
-      border: 1px solid #fca5a5;
-      color: #991b1b;
-      border-radius: 10px;
-      padding: 12px 14px;
-      margin-top: 14px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .action-pair {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 18px;
-    }
-
-    .start-batch-btn {
-      width: 100%;
-      margin-top: 12px;
-      padding: 16px 20px;
-      border-radius: 10px;
-      border: none;
-      background: #0b1628;
-      color: #fff;
-      font-size: 17px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    .start-batch-btn.locked {
-      background: #6b7280;
-    }
-
-    .digging-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.56);
-      z-index: 130;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    .digging-overlay.open {
-      display: flex;
-    }
-
-    .digging-card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 34px 40px;
-      text-align: center;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
-      min-width: 260px;
-    }
-
-    .spinner-ring-disc {
-      width: 84px;
-      height: 84px;
-      margin: 0 auto 18px;
-      border-radius: 50%;
-      background: #e2e8f0;
-      position: relative;
-      display: grid;
-      place-items: center;
-    }
-
-    .spinner-ring-disc::before {
-      content: "";
-      width: 62px;
-      height: 62px;
-      border-radius: 50%;
-      border: 4px dashed #64748b;
-      animation: spinClockwise 1.1s linear infinite;
-    }
-
-    .spinner-center-dot {
-      position: absolute;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .digging-title {
-      font-size: 20px;
-      font-weight: 800;
-      color: #111827;
-      margin-bottom: 6px;
-    }
-
-    .dots-pulse {
-      font-size: 20px;
-      letter-spacing: 3px;
-      color: #111827;
-      animation: pulseFade 0.9s ease-in-out infinite;
-    }
-
-    @keyframes spinClockwise {
-      to { transform: rotate(360deg); }
-    }
-
-    @keyframes pulseFade {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
-    }
-
-    .luxury-splash-overlay {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at 50% 42%, #182746 0%, #0b1326 75%);
-      z-index: 140;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 24px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    .luxury-splash-overlay.open {
-      display: flex;
-    }
-
-    .orbital-stage {
-      position: relative;
-      width: 170px;
-      height: 170px;
-      display: grid;
-      place-items: center;
-      margin-bottom: 24px;
-    }
-
-    .orbit-ring {
-      position: absolute;
-      border-radius: 50%;
-      border: 1px solid rgba(212, 175, 55, 0.28);
-    }
-
-    .orbit-ring.outer {
-      width: 164px;
-      height: 164px;
-      animation: spinClockwise 5s linear infinite;
-    }
-
-    .orbit-ring.middle {
-      width: 122px;
-      height: 122px;
-      border-color: rgba(212, 175, 55, 0.55);
-      animation: spinCounter 3.5s linear infinite;
-    }
-
-    .orbit-ring.inner {
-      width: 84px;
-      height: 84px;
-      border-color: rgba(212, 175, 55, 0.85);
-    }
-
-    .orbit-dot {
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #f5d061;
-      top: -4px;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    .gold-core-square {
-      width: 46px;
-      height: 46px;
-      background: linear-gradient(135deg, #f5d061 0%, #c69c53 60%, #8f6724 100%);
-      box-shadow: 0 0 22px rgba(212, 175, 55, 0.45);
-    }
-
-    .splash-brand-title {
-      font-size: 24px;
-      letter-spacing: 6px;
-      font-weight: 500;
-      color: #f3d27a;
-      text-transform: uppercase;
-    }
-
-    .splash-brand-sub {
-      font-size: 11px;
-      letter-spacing: 3.5px;
-      color: #6b7ea8;
-      margin-top: 8px;
-      text-transform: uppercase;
-    }
-
-    .splash-dots {
-      display: flex;
-      gap: 8px;
-      margin-top: 18px;
-    }
-
-    .splash-dots span {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #d4af37;
-      animation: pulseFade 1s infinite;
-    }
-
-    .splash-rule-line {
-      width: 180px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #d4af37, transparent);
-      margin-top: 20px;
-    }
-
-    @keyframes spinCounter {
-      to { transform: rotate(-360deg); }
-    }
-
+    /* Left 3-Line Drawer */
     .drawer-backdrop {
       position: fixed;
       inset: 0;
@@ -871,6 +610,7 @@
       display: block;
     }
 
+    /* Footer matching Image 4 bottom */
     .site-footer {
       border-top: 1px solid var(--line);
       background: #fff;
@@ -904,6 +644,30 @@
       color: var(--muted);
     }
 
+    .newsletter-input-row {
+      display: flex;
+      border-bottom: 1px solid #222;
+      padding-bottom: 6px;
+      margin: 12px 0 8px;
+    }
+
+    .newsletter-input-row input {
+      border: none;
+      outline: none;
+      flex: 1;
+      font-size: 13px;
+    }
+
+    .newsletter-input-row button {
+      background: none;
+      border: none;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+    }
+
+    /* Modal */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -972,7 +736,7 @@
       border-radius: 10px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 13px;
-      z-index: 150;
+      z-index: 120;
       opacity: 0;
       transition: opacity 0.2s ease;
       pointer-events: none;
@@ -996,237 +760,44 @@
   </style>
 </head>
 <body>
-  <div id="mainStorefrontView">
-    <div class="top-utility">
-      <div class="util-left">
-        <span id="statusSummary">Member: Guest &bull; Wallet: &#2547; 0.00</span>
-      </div>
-      <div class="util-right">
-        <button type="button" class="util-btn" id="topSnatchBtn" style="display:none;">
-          Snatch Orders (<span id="snatchBadge">0 / 25</span>)
-        </button>
-        <button type="button" class="util-btn primary" id="topAuthBtn">Login / Register</button>
-        <a href="./admin.html" class="util-btn">Admin</a>
-      </div>
+  <div class="top-utility">
+    <div class="util-left">
+      <span id="statusSummary">Member: Guest &bull; Wallet: &#2547; 698.34</span>
     </div>
+    <div class="util-right">
+      <button type="button" class="util-btn" id="topSnatchBtn" style="display:none;">
+        Snatch Orders (<span id="snatchBadge">0 / 25</span>)
+      </button>
+      <button type="button" class="util-btn primary" id="topAuthBtn">Login / Register</button>
+      <a href="./admin.html" class="util-btn">Admin</a>
+    </div>
+  </div>
 
-    <header class="main-header">
-      <div class="header-top-row">
-        <button type="button" class="menu-3line-btn" id="menu3LineBtn" aria-label="Menu">&#9776;</button>
-        <div class="brand-wordmark" id="brandHomeBtn">
-          <div class="brand-main">ROYAL SUNSTONE</div>
-          <div class="brand-sub">JEWELS &bull; CRAFTED FOR ROYALTY</div>
-        </div>
+  <header class="main-header">
+    <div class="header-top-row">
+      <button type="button" class="menu-3line-btn" id="menu3LineBtn" aria-label="Menu">&#9776;</button>
+      <div class="brand-wordmark" id="brandHomeBtn">
+        <div class="brand-main">ROYAL SUNSTONE</div>
+        <div class="brand-sub">JEWELS &bull; CRAFTED FOR ROYALTY</div>
+      </div>
+      <div class="header-right-group">
         <button type="button" class="util-btn" id="headerContactBtn">Contact Us</button>
       </div>
-
-      <nav class="top-cat-nav">
-        <button data-cat="All">Featured</button>
-        <button data-cat="Rings">Sunstones</button>
-        <button data-cat="Rings">Rings</button>
-        <button data-cat="Necklaces">Necklaces</button>
-        <button data-cat="Bracelets">Bracelets</button>
-        <button data-cat="Earrings">Earrings</button>
-        <button id="navSnatchOrdersBtn">Snatch Orders</button>
-        <button id="navContactUsBtn">Contact Us</button>
-      </nav>
-    </header>
-
-    <section class="bf-hero">
-      <div class="bf-title-top">BLACK FRIDAY</div>
-      <div class="bf-sub-row">
-        <span class="bf-upto">UP TO</span>
-        <span class="bf-off-big">40% OFF*</span>
-      </div>
-      <div class="bf-jewel-tag">JEWELRY</div>
-      <button type="button" class="shop-now-white-btn" id="heroShopNowBtn">SHOP NOW</button>
-      <button type="button" class="hero-down-chevron" id="heroScrollDownBtn" aria-label="Scroll down">&#8964;</button>
-    </section>
-
-    <section class="section-wrap" id="craftedSection">
-      <div class="section-heading-center">
-        <h2>CRAFTED BY HAND, WITH HEART</h2>
-        <p>Browse our selection of timeless fine jewelry, made to last a lifetime.</p>
-      </div>
-      <div class="three-cards-grid" id="threeShowcaseGrid"></div>
-    </section>
-
-    <section class="section-wrap" style="padding-top:10px;">
-      <div class="two-feature-grid">
-        <div class="feature-box-card">
-          <img id="exploreCollectionImg" class="feature-box-img" alt="Explore the Collection" />
-          <div class="feature-box-content">
-            <h3>EXPLORE THE COLLECTION</h3>
-            <p>Select a setting and a sunstone, and we'll bring them together to create your piece.</p>
-            <div class="outline-btn-row">
-              <button type="button" class="ghost-rect-btn" data-filter-scroll="Rings">START WITH A SUNSTONE</button>
-              <button type="button" class="ghost-rect-btn" data-filter-scroll="Necklaces">START WITH THE SETTING</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="feature-box-card">
-          <img id="creativeStudioImg" class="feature-box-img" alt="Explore the Creative Studio" />
-          <div class="feature-box-content">
-            <h3>EXPLORE THE CREATIVE STUDIO</h3>
-            <p>Design a custom piece of fine jewelry through an intuitive, guided process.</p>
-            <div class="outline-btn-row">
-              <button type="button" class="ghost-rect-btn" data-filter-scroll="Bracelets">VISIT THE CREATIVE STUDIO</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="exclusive-band">
-      <div class="section-heading-center" style="margin-bottom:14px;">
-        <h2>EXCLUSIVE COLLECTIONS</h2>
-      </div>
-
-      <div class="carousel-controls">
-        <button type="button" class="carousel-arrow" id="prevSlideBtn" aria-label="Previous">&lsaquo;</button>
-        <div class="carousel-dots">
-          <button type="button" class="carousel-dot active" data-slide="0"></button>
-          <button type="button" class="carousel-dot" data-slide="1"></button>
-          <button type="button" class="carousel-dot" data-slide="2"></button>
-        </div>
-        <button type="button" class="carousel-arrow" id="nextSlideBtn" aria-label="Next">&rsaquo;</button>
-      </div>
-
-      <div class="exclusive-banner-box" id="exclusiveSlideBox"></div>
-    </section>
-
-    <section class="section-wrap">
-      <div class="section-heading-center">
-        <h2>WORLD OF ROYAL SUNSTONE</h2>
-      </div>
-
-      <div class="editorial-row">
-        <div class="editorial-text">
-          <h3>CURATED BY THE ASSCHER FAMILY</h3>
-          <p>
-            Natural stones selected according to beauty standards shaped by generations of fine stone
-            expertise. Explore pieces crafted with care and lasting brilliance.
-          </p>
-          <button type="button" class="editorial-link-btn" data-filter-scroll="Earrings">FIND THE PERFECT PIECE &rarr;</button>
-        </div>
-        <img id="editorialImg1" class="editorial-img" alt="Curated Stone Craft" />
-      </div>
-
-      <div class="editorial-row">
-        <img id="editorialImg2" class="editorial-img" alt="Custom Creations" />
-        <div class="editorial-text">
-          <h3>CUSTOM CREATIONS</h3>
-          <p>
-            Bring your unique vision to life with Royal Sunstone Jewels. From signature rings to
-            curated fine jewelry styles, discover timeless craftsmanship.
-          </p>
-          <button type="button" class="editorial-link-btn" data-filter-scroll="All">CREATE YOUR DESIGN &rarr;</button>
-        </div>
-      </div>
-    </section>
-
-    <footer class="site-footer">
-      <div class="footer-grid">
-        <div class="footer-col">
-          <h4>CUSTOMER CARE</h4>
-          <ul>
-            <li><button type="button" id="footerContactLink" style="background:none; border:none; color:inherit; cursor:pointer; padding:0;">Contact Us</button></li>
-            <li><button type="button" id="footerSnatchLink" style="background:none; border:none; color:inherit; cursor:pointer; padding:0;">Snatch Orders</button></li>
-            <li>FAQ</li>
-            <li>Returns</li>
-          </ul>
-        </div>
-
-        <div class="footer-col">
-          <h4>WHY ROYAL SUNSTONE</h4>
-          <ul>
-            <li>Return Policy</li>
-            <li>Conflict-Free Stones</li>
-            <li>Quality &amp; Value</li>
-            <li>Secure Shipping</li>
-            <li>Jewelry Packaging</li>
-          </ul>
-        </div>
-
-        <div class="footer-col">
-          <h4>ABOUT ROYAL SUNSTONE</h4>
-          <ul>
-            <li>Craftsmanship</li>
-            <li>The Clear Cut</li>
-            <li>Reviews</li>
-            <li>Sustainability</li>
-            <li><a href="./admin.html">Control Panel</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-col">
-          <h4>SHOP WITH US</h4>
-          <ul>
-            <li>Book an Appointment</li>
-            <li>Locations</li>
-          </ul>
-        </div>
-
-        <div>
-          <div style="font-weight:700; margin-bottom:4px;">Join the Royal Sunstone List</div>
-          <div style="color:var(--muted);">Get Exclusive Offers and News.</div>
-          <form id="newsletterForm">
-            <div style="display:flex; border-bottom:1px solid #222; padding-bottom:6px; margin:12px 0 8px;">
-              <input type="email" id="newsletterEmail" required placeholder="Email Address" style="border:none; outline:none; flex:1; font-size:13px;" />
-              <button type="submit" style="background:none; border:none; font-size:11px; font-weight:800; letter-spacing:1.5px; cursor:pointer;">JOIN</button>
-            </div>
-          </form>
-          <p style="font-size:11px; color:var(--muted);">
-            By clicking Join, you agree to our Terms &amp; Privacy Policy.
-          </p>
-        </div>
-      </div>
-    </footer>
-  </div>
-
-  <div id="snatchDedicatedPage">
-    <div class="snatch-page-topbar">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <button type="button" class="btn btn-outline" id="backToStoreBtn">&larr; Main Page</button>
-        <strong>ROYAL SUNSTONE</strong>
-      </div>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:13px; font-weight:700;" id="snatchPageBalance">&#2547; 0.00</span>
-        <button type="button" class="menu-3line-btn" id="snatchPageMenuBtn" aria-label="Menu">&#9776;</button>
-      </div>
     </div>
 
-    <div class="snatch-page-container" id="snatchPageBody"></div>
-  </div>
+    <nav class="top-cat-nav">
+      <button data-cat="All">Featured</button>
+      <button data-cat="Rings">Sunstones</button>
+      <button data-cat="Rings">Rings</button>
+      <button data-cat="Necklaces">Necklaces</button>
+      <button data-cat="Bracelets">Bracelets</button>
+      <button data-cat="Earrings">Earrings</button>
+      <button id="navSnatchOrdersBtn">Snatch Orders</button>
+      <button id="navContactUsBtn">Contact Us</button>
+    </nav>
+  </header>
 
-  <div class="digging-overlay" id="diggingOverlay">
-    <div class="digging-card">
-      <div class="spinner-ring-disc">
-        <div class="spinner-center-dot"></div>
-      </div>
-      <div class="digging-title">Digging Order...</div>
-      <div class="dots-pulse">&bull; &bull; &bull;</div>
-    </div>
-  </div>
-
-  <div class="luxury-splash-overlay" id="luxurySplashOverlay">
-    <div class="orbital-stage">
-      <div class="orbit-ring outer"><div class="orbit-dot"></div></div>
-      <div class="orbit-ring middle"></div>
-      <div class="orbit-ring inner"></div>
-      <div class="gold-core-square"></div>
-    </div>
-    <div class="splash-brand-title">ROYAL SUNSTONE</div>
-    <div class="splash-brand-sub">FINE JEWELLERY</div>
-    <div class="splash-dots">
-      <span style="animation-delay:0s;"></span>
-      <span style="animation-delay:0.25s;"></span>
-      <span style="animation-delay:0.5s;"></span>
-    </div>
-    <div class="splash-rule-line"></div>
-  </div>
-
+  <!-- Left 3-Line Drawer -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside class="side-drawer" id="sideDrawer">
     <div style="display:flex; justify-content:flex-end; padding:12px 16px 0;">
@@ -1329,6 +900,178 @@
     </div>
   </aside>
 
+  <!-- 1. Hero Banner (Image 1) -->
+  <section class="bf-hero">
+    <div class="bf-hero-inner">
+      <div class="bf-title-top">BLACK FRIDAY</div>
+      <div class="bf-sub-row">
+        <span class="bf-upto">UP TO</span>
+        <span class="bf-off-big">40% OFF*</span>
+      </div>
+      <div class="bf-jewel-tag">JEWELRY</div>
+      <button type="button" class="shop-now-white-btn" id="heroShopNowBtn">SHOP NOW</button>
+      <button type="button" class="hero-down-chevron" id="heroScrollDownBtn" aria-label="Scroll down">&#8964;</button>
+    </div>
+  </section>
+
+  <!-- Dynamic Panels: Snatch Orders (25), Pay Out, Contact Us -->
+  <section class="dynamic-panel" id="snatchPanel"></section>
+  <section class="dynamic-panel" id="payOutPanel"></section>
+  <section class="dynamic-panel" id="contactPanel"></section>
+
+  <!-- 2. Crafted By Hand, With Heart — 3 Showcase Cards (Image 1 bottom) -->
+  <section class="section-wrap" id="craftedSection">
+    <div class="section-heading-center">
+      <h2>CRAFTED BY HAND, WITH HEART</h2>
+      <p>Browse our selection of timeless fine jewelry, made to last a lifetime.</p>
+    </div>
+
+    <div class="three-cards-grid" id="threeShowcaseGrid"></div>
+  </section>
+
+  <!-- 3. Two-Column Feature Cards (Image 2 top) -->
+  <section class="section-wrap" style="padding-top:10px;">
+    <div class="two-feature-grid">
+      <div class="feature-box-card">
+        <img id="exploreCollectionImg" class="feature-box-img" alt="Explore the Collection" />
+        <div class="feature-box-content">
+          <h3>EXPLORE THE COLLECTION</h3>
+          <p>Select a setting and a sunstone, and we'll bring them together to create your piece.</p>
+          <div class="outline-btn-row">
+            <button type="button" class="ghost-rect-btn" data-filter-scroll="Rings">START WITH A SUNSTONE</button>
+            <button type="button" class="ghost-rect-btn" data-filter-scroll="Necklaces">START WITH THE SETTING</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature-box-card">
+        <img id="creativeStudioImg" class="feature-box-img" alt="Explore the Creative Studio" />
+        <div class="feature-box-content">
+          <h3>EXPLORE THE CREATIVE STUDIO</h3>
+          <p>Design a custom piece of fine jewelry through an intuitive, guided process.</p>
+          <div class="outline-btn-row">
+            <button type="button" class="ghost-rect-btn" data-filter-scroll="Bracelets">VISIT THE CREATIVE STUDIO</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Exclusive Collections Carousel (Image 2 & 3) -->
+  <section class="exclusive-band">
+    <div class="section-heading-center" style="margin-bottom:14px;">
+      <h2>EXCLUSIVE COLLECTIONS</h2>
+    </div>
+
+    <div class="carousel-controls">
+      <button type="button" class="carousel-arrow" id="prevSlideBtn" aria-label="Previous">&lsaquo;</button>
+      <div class="carousel-dots">
+        <button type="button" class="carousel-dot active" data-slide="0"></button>
+        <button type="button" class="carousel-dot" data-slide="1"></button>
+        <button type="button" class="carousel-dot" data-slide="2"></button>
+      </div>
+      <button type="button" class="carousel-arrow" id="nextSlideBtn" aria-label="Next">&rsaquo;</button>
+    </div>
+
+    <div class="exclusive-banner-box" id="exclusiveSlideBox"></div>
+  </section>
+
+  <!-- 5. World of Royal Sunstone Editorial Blocks (Image 3 bottom & Image 4) -->
+  <section class="section-wrap">
+    <div class="section-heading-center">
+      <h2>WORLD OF ROYAL SUNSTONE</h2>
+    </div>
+
+    <div class="editorial-row">
+      <div class="editorial-text">
+        <h3>CURATED BY THE ASSCHER FAMILY</h3>
+        <p>
+          Natural stones selected according to beauty standards shaped by generations of fine stone
+          expertise. Explore pieces crafted with care and lasting brilliance.
+        </p>
+        <button type="button" class="editorial-link-btn" data-filter-scroll="Earrings">FIND THE PERFECT PIECE &rarr;</button>
+      </div>
+      <img id="editorialImg1" class="editorial-img" alt="Curated Stone Craft" />
+    </div>
+
+    <div class="editorial-row">
+      <img id="editorialImg2" class="editorial-img" alt="Custom Creations" />
+      <div class="editorial-text">
+        <h3>CUSTOM CREATIONS</h3>
+        <p>
+          Bring your unique vision to life with Royal Sunstone Jewels. From signature rings to
+          curated fine jewelry styles, discover timeless craftsmanship.
+        </p>
+        <button type="button" class="editorial-link-btn" data-filter-scroll="All">CREATE YOUR DESIGN &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer matching Image 4 bottom -->
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>CUSTOMER CARE</h4>
+        <ul>
+          <li><button type="button" id="footerContactLink" style="background:none; border:none; color:inherit; cursor:pointer; padding:0;">Contact Us</button></li>
+          <li><button type="button" id="footerSnatchLink" style="background:none; border:none; color:inherit; cursor:pointer; padding:0;">Snatch Orders</button></li>
+          <li>FAQ</li>
+          <li>Returns</li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>WHY ROYAL SUNSTONE</h4>
+        <ul>
+          <li>Return Policy</li>
+          <li>Conflict-Free Stones</li>
+          <li>Quality &amp; Value</li>
+          <li>Secure Shipping</li>
+          <li>Jewelry Packaging</li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>ABOUT ROYAL SUNSTONE</h4>
+        <ul>
+          <li>Craftsmanship</li>
+          <li>The Clear Cut</li>
+          <li>Reviews</li>
+          <li>Sustainability</li>
+          <li><a href="./admin.html">Control Panel</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>SHOP WITH US</h4>
+        <ul>
+          <li>Book an Appointment</li>
+          <li>Locations</li>
+        </ul>
+      </div>
+
+      <div>
+        <div style="font-weight:700; margin-bottom:4px;">Join the Royal Sunstone List</div>
+        <div style="color:var(--muted);">Get Exclusive Offers and News.</div>
+        <form id="newsletterForm">
+          <div class="newsletter-input-row">
+            <input type="email" id="newsletterEmail" required placeholder="Email Address" />
+            <button type="submit">JOIN</button>
+          </div>
+        </form>
+        <p style="font-size:11px; color:var(--muted);">
+          By clicking Join, you agree to our Terms &amp; Privacy Policy.
+        </p>
+        <div style="margin-top:14px; display:flex; flex-direction:column; gap:6px; font-weight:600;">
+          <span>f &nbsp; Facebook</span>
+          <span>&#9678; &nbsp; Instagram</span>
+          <span>P &nbsp; Pinterest</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal -->
   <div class="modal-backdrop" id="appModal">
     <div class="modal-box" id="modalBox"></div>
   </div>
