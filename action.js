@@ -7,6 +7,7 @@ import {
 
 const DEFAULT_BATCH_COUNT = 25;
 const DEFAULT_BATCH_PROFIT = 500;
+const NEW_USER_STARTING_BALANCE = 0;
 
 const DEFAULT_PRODUCTS = [
   {
@@ -55,21 +56,21 @@ const EXCLUSIVE_SLIDES = [
   {
     title: "THE PINNACLE OF LUXURY",
     subtitle: "ONLY AT ROYAL SUNSTONE",
-    cta: "SHOP THE COLLECTION →",
+    cta: "SHOP THE COLLECTION ->",
     filterCategory: "Necklaces",
     image: "./images/necklace-1.jpg"
   },
   {
     title: "A LUMINOUS EXPRESSION OF DIMENSIONAL FORM",
     subtitle: "WOVEN PAVÉ COLLECTION",
-    cta: "SHOP THE COLLECTION →",
+    cta: "SHOP THE COLLECTION ->",
     filterCategory: "Rings",
     image: "./images/ring-1.jpg"
   },
   {
     title: "RADIANT SUNSTONE BRILLIANCE",
     subtitle: "LIMITED EDITION SERIES",
-    cta: "SHOP THE COLLECTION →",
+    cta: "SHOP THE COLLECTION ->",
     filterCategory: "Bracelets",
     image: "./images/bracelet-1.jpg"
   }
@@ -113,25 +114,25 @@ function buildAssignedQueue(baseList, orderCount, totalProfit, requiredBalancePe
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8," +
   encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
-      <rect width="600" height="400" fill="#efebe3"/>
-      <polygon points="300,90 355,165 300,240 245,165" fill="#142238"/>
-      <circle cx="300" cy="165" r="22" fill="#c69c53"/>
-      <text x="300" y="295" font-family="Georgia, serif" font-size="18" fill="#141414" text-anchor="middle">ROYAL SUNSTONE JEWELS</text>
-    </svg>`
+    '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">' +
+      '<rect width="600" height="400" fill="#efebe3"/>' +
+      '<polygon points="300,90 355,165 300,240 245,165" fill="#142238"/>' +
+      '<circle cx="300" cy="165" r="22" fill="#c69c53"/>' +
+      '<text x="300" y="295" font-family="Georgia, serif" font-size="18" fill="#141414" text-anchor="middle">ROYAL SUNSTONE JEWELS</text>' +
+    "</svg>"
   );
 
-const STORAGE_KEY = "royal_sunstone_admin_orders_v1";
+const STORAGE_KEY = "royal_sunstone_per_user_v2";
 
 const state = {
   selectedCategory: "All",
   slideIndex: 0,
-  pageMode: "main", // "main" | "snatch"
-  snatchSubMode: "queue", // "queue" | "payout" | "contact"
+  pageMode: "main",
+  snatchSubMode: "queue",
   snatchTab: "collection",
   isProcessingOrder: false,
   products: [...DEFAULT_PRODUCTS],
-  assignedOrdersMap: {}, // keyed by normalized phone digits -> { orderCount, totalProfit, requiredBalance, updatedAt }
+  assignedOrdersMap: {},
   activeQueue: buildAssignedQueue(DEFAULT_PRODUCTS, DEFAULT_BATCH_COUNT, DEFAULT_BATCH_PROFIT, 0),
   targetCount: DEFAULT_BATCH_COUNT,
   targetProfit: DEFAULT_BATCH_PROFIT,
@@ -142,7 +143,7 @@ const state = {
   testCredit: 10000,
   orders: [],
   history: [],
-  registeredAccounts: {},
+  userProfilesMap: {},
   supportConfig: {
     telegramUrl: "https://t.me/royalsunstone_support",
     whatsappNumber: "8801700000000"
@@ -154,11 +155,27 @@ const state = {
     countryCode: "+880",
     phone: "",
     fullPhone: "",
-    balance: 698.34,
+    balance: NEW_USER_STARTING_BALANCE,
     bindMethod: "bkash",
     bindAddress: "45643"
   }
 };
+
+function createFreshProfile(fullPhone, password, startingBalance = NEW_USER_STARTING_BALANCE) {
+  return {
+    fullPhone,
+    password,
+    balance: roundMoney(startingBalance),
+    completedStep: 0,
+    dailyProfit: 0,
+    outOfFunds: 0,
+    testCredit: 10000,
+    orders: [],
+    history: [],
+    bindMethod: "bkash",
+    bindAddress: "45643"
+  };
+}
 
 function normalizePhone(raw) {
   return String(raw || "").replace(/\D/g, "").replace(/^0+/, "");
@@ -196,20 +213,66 @@ function applyUserOrderAssignment() {
   }
 }
 
+function saveCurrentProfile() {
+  const fullPhone = state.session.fullPhone;
+  if (!state.session.loggedIn || !fullPhone) return;
+  const existing = state.userProfilesMap[fullPhone] || {};
+  state.userProfilesMap[fullPhone] = {
+    ...existing,
+    fullPhone,
+    password: existing.password || "",
+    balance: roundMoney(state.session.balance),
+    completedStep: Math.max(0, Number(state.completedStep || 0)),
+    dailyProfit: roundMoney(state.dailyProfit || 0),
+    outOfFunds: roundMoney(state.outOfFunds || 0),
+    testCredit: roundMoney(state.testCredit ?? 10000),
+    orders: Array.isArray(state.orders) ? state.orders : [],
+    history: Array.isArray(state.history) ? state.history : [],
+    bindMethod: state.session.bindMethod || "bkash",
+    bindAddress: state.session.bindAddress || "45643"
+  };
+}
+
+function loadProfileIntoState(fullPhone) {
+  const prof = state.userProfilesMap[fullPhone];
+  if (!prof) return;
+  state.session.balance = roundMoney(prof.balance ?? NEW_USER_STARTING_BALANCE);
+  state.session.bindMethod = prof.bindMethod || "bkash";
+  state.session.bindAddress = prof.bindAddress || "45643";
+  state.completedStep = Math.max(0, Number(prof.completedStep || 0));
+  state.dailyProfit = roundMoney(prof.dailyProfit || 0);
+  state.outOfFunds = roundMoney(prof.outOfFunds || 0);
+  state.testCredit = roundMoney(prof.testCredit ?? 10000);
+  state.orders = Array.isArray(prof.orders) ? prof.orders : [];
+  state.history = Array.isArray(prof.history) ? prof.history : [];
+  applyUserOrderAssignment();
+}
+
+function resetGuestViewState() {
+  state.completedStep = 0;
+  state.dailyProfit = 0;
+  state.outOfFunds = 0;
+  state.testCredit = 10000;
+  state.orders = [];
+  state.history = [];
+  state.session.loggedIn = false;
+  state.session.phone = "";
+  state.session.fullPhone = "";
+  state.session.balance = NEW_USER_STARTING_BALANCE;
+  state.session.bindMethod = "bkash";
+  state.session.bindAddress = "45643";
+  applyUserOrderAssignment();
+}
+
 function saveLocal() {
   try {
+    saveCurrentProfile();
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
         products: state.products,
         assignedOrdersMap: state.assignedOrdersMap,
-        completedStep: state.completedStep,
-        dailyProfit: roundMoney(state.dailyProfit),
-        outOfFunds: roundMoney(state.outOfFunds),
-        testCredit: roundMoney(state.testCredit),
-        orders: state.orders,
-        history: state.history,
-        registeredAccounts: state.registeredAccounts,
+        userProfilesMap: state.userProfilesMap,
         supportConfig: state.supportConfig,
         session: {
           ...state.session,
@@ -223,7 +286,10 @@ function saveLocal() {
 function loadLocal() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
+    if (!raw) {
+      resetGuestViewState();
+      return;
+    }
     const p = JSON.parse(raw);
     if (Array.isArray(p.products) && p.products.length > 0) {
       state.products = p.products;
@@ -231,14 +297,8 @@ function loadLocal() {
     if (p.assignedOrdersMap && typeof p.assignedOrdersMap === "object") {
       state.assignedOrdersMap = p.assignedOrdersMap;
     }
-    if (typeof p.completedStep === "number") state.completedStep = Math.max(0, p.completedStep);
-    if (typeof p.dailyProfit === "number") state.dailyProfit = roundMoney(p.dailyProfit);
-    if (typeof p.outOfFunds === "number") state.outOfFunds = roundMoney(p.outOfFunds);
-    if (typeof p.testCredit === "number") state.testCredit = roundMoney(p.testCredit);
-    if (Array.isArray(p.orders)) state.orders = p.orders;
-    if (Array.isArray(p.history)) state.history = p.history;
-    if (p.registeredAccounts && typeof p.registeredAccounts === "object") {
-      state.registeredAccounts = p.registeredAccounts;
+    if (p.userProfilesMap && typeof p.userProfilesMap === "object") {
+      state.userProfilesMap = p.userProfilesMap;
     }
     if (p.supportConfig && typeof p.supportConfig === "object") {
       state.supportConfig = { ...state.supportConfig, ...p.supportConfig };
@@ -247,11 +307,17 @@ function loadLocal() {
       state.session = {
         ...state.session,
         ...p.session,
-        balance: roundMoney(p.session.balance ?? state.session.balance)
+        balance: roundMoney(p.session.balance ?? NEW_USER_STARTING_BALANCE)
       };
     }
-    applyUserOrderAssignment();
-  } catch (_) {}
+    if (state.session.loggedIn && state.session.fullPhone && state.userProfilesMap[state.session.fullPhone]) {
+      loadProfileIntoState(state.session.fullPhone);
+    } else {
+      resetGuestViewState();
+    }
+  } catch (_) {
+    resetGuestViewState();
+  }
 }
 
 function showToast(msg) {
@@ -288,13 +354,6 @@ function getRequiredAmountForItem(item) {
   const minSet = roundMoney(state.requiredBalancePerOrder || 0);
   if (minSet > 0) return minSet;
   return roundMoney(item?.price || 0);
-}
-
-function hasEnoughBalanceForNextOrder() {
-  if (state.completedStep >= state.targetCount) return true;
-  const nextItem = state.activeQueue[state.completedStep];
-  const required = getRequiredAmountForItem(nextItem);
-  return roundMoney(state.session.balance || 0) >= required;
 }
 
 function switchToSnatchPage(subMode = "queue") {
@@ -510,7 +569,6 @@ function renderSnatchDedicatedPage() {
     return;
   }
 
-  /* Snatch Queue View */
   const nextStep = Math.min(state.targetCount, state.completedStep + 1);
   const nextItem = state.activeQueue[state.completedStep];
   const requiredForNext = nextItem ? getRequiredAmountForItem(nextItem) : 0;
@@ -744,23 +802,28 @@ function openPhoneAuthModal() {
   const finishAuth = (code, phone, pass, isReg) => {
     const fullPhone = buildFullPhone(code, phone);
     if (!fullPhone || !pass) return;
-    const acc = state.registeredAccounts[fullPhone];
-    if (!isReg && acc && acc.password !== pass) {
+
+    const existing = state.userProfilesMap[fullPhone];
+    if (!isReg && existing && existing.password && existing.password !== pass) {
       showToast("Incorrect password.");
       return;
     }
-    state.registeredAccounts[fullPhone] = {
-      fullPhone,
-      password: pass,
-      balance: roundMoney(acc?.balance ?? state.session.balance)
-    };
+
+    if (isReg || !existing) {
+      state.userProfilesMap[fullPhone] = createFreshProfile(fullPhone, pass, NEW_USER_STARTING_BALANCE);
+    } else {
+      state.userProfilesMap[fullPhone] = {
+        ...existing,
+        password: pass
+      };
+    }
+
     state.session.loggedIn = true;
     state.session.countryCode = code;
     state.session.phone = normalizePhone(phone);
     state.session.fullPhone = fullPhone;
-    state.session.balance = roundMoney(state.registeredAccounts[fullPhone].balance);
 
-    applyUserOrderAssignment();
+    loadProfileIntoState(fullPhone);
     addHistory(`${isReg ? "Register" : "Login"}: ${fullPhone}`);
     saveLocal();
     renderTopAndDrawer();
@@ -857,6 +920,15 @@ function openOrderRecordModal() {
   document.getElementById("recCloseBtn")?.addEventListener("click", closeModal);
 }
 
+function handleLogoutAction() {
+  saveLocal();
+  resetGuestViewState();
+  switchToMainPage();
+  saveLocal();
+  renderTopAndDrawer();
+  showToast("Logged out.");
+}
+
 function bindEvents() {
   if (bindEvents._bound) return;
   bindEvents._bound = true;
@@ -930,11 +1002,7 @@ function bindEvents() {
 
   document.getElementById("topAuthBtn")?.addEventListener("click", () => {
     if (state.session.loggedIn) {
-      state.session.loggedIn = false;
-      switchToMainPage();
-      saveLocal();
-      renderTopAndDrawer();
-      showToast("Logged out.");
+      handleLogoutAction();
     } else {
       openPhoneAuthModal();
     }
@@ -993,8 +1061,8 @@ function bindEvents() {
   document.getElementById("changePassForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
     const p = document.getElementById("newPassField").value;
-    if (state.session.fullPhone && state.registeredAccounts[state.session.fullPhone]) {
-      state.registeredAccounts[state.session.fullPhone].password = p;
+    if (state.session.fullPhone && state.userProfilesMap[state.session.fullPhone]) {
+      state.userProfilesMap[state.session.fullPhone].password = p;
     }
     e.target.reset();
     addHistory("Password changed");
@@ -1004,11 +1072,7 @@ function bindEvents() {
 
   document.getElementById("drawerSignOutBtn")?.addEventListener("click", () => {
     closeDrawer();
-    state.session.loggedIn = false;
-    switchToMainPage();
-    saveLocal();
-    renderTopAndDrawer();
-    showToast("Signed out.");
+    handleLogoutAction();
   });
 
   document.getElementById("newsletterForm")?.addEventListener("submit", (e) => {
